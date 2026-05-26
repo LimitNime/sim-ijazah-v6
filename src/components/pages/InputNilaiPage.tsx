@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Save, ChevronLeft, ChevronRight, PenLine, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { Button, SearchBar, PageHeader, StatCard, Spinner } from '../ui'
-import { siswaApi, mapelApi, semesterApi, nilaiApi } from '../../lib/api'
+import { siswaApi, mapelApi, semesterApi, nilaiApi, sekolahApi } from '../../lib/api'
 import type { Siswa, Mapel, Semester, Nilai } from '../../types'
 
 interface NilaiMap {
@@ -62,6 +62,7 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
   const [selSiswa, setSelSiswa] = useState<Siswa | null>(null)
   const [selSem, setSelSem] = useState<Semester | null>(null)
   const [nilaiMap, setNilaiMap] = useState<NilaiMap>({})
+  const [sekolah, setSekolah] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [loadingNilai, setLoadingNilai] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -86,6 +87,7 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
       }
       setLoading(false)
     })
+    sekolahApi.get().then(sk => setSekolah(sk))
   }, [initialSiswaId])
 
   // Filter siswa by search
@@ -131,8 +133,8 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
       if (isUjian(selSem)) {
         if (n.nilai_ujian != null) { filled++; vals.push(n.nilai_ujian) }
       } else {
-        if (n.nilai_p != null && n.nilai_k != null) {
-          filled++; vals.push((n.nilai_p + n.nilai_k) / 2)
+        if (n.nilai_p != null) {
+          filled++; vals.push(n.nilai_p)
         }
       }
     })
@@ -153,7 +155,7 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
           mapel_id: m.id,
           semester_id: selSem.id,
           nilai_p: isUjian(selSem) ? null : (n.nilai_p ?? null),
-          nilai_k: isUjian(selSem) ? null : (n.nilai_k ?? null),
+          nilai_k: null,
           nilai_ujian: isUjian(selSem) ? (n.nilai_ujian ?? null) : null,
         }
       })
@@ -186,8 +188,7 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
       {/* Info bar */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 flex items-center gap-2 text-xs text-blue-700">
         <Info className="w-3.5 h-3.5 shrink-0" />
-        Nilai Raport SMT = (P + K) ÷ 2 &nbsp;·&nbsp; Raport Ijazah = rata-rata semua semester raport &nbsp;·&nbsp;
-        Nilai Ijazah = (Raport × bobot%) + (Ujian × bobot%)
+        Nilai Raport per Semester = Nilai Pengetahuan (P) &nbsp;·&nbsp; Nilai Ijazah = (Rata Raport × bobot%) + (Ujian × bobot%)
       </div>
 
       <div className="flex gap-4 flex-1 min-h-0">
@@ -284,24 +285,58 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
                           <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Mata Pelajaran</th>
                           <th className="px-2 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide w-28 text-center">Kel.</th>
                           {isUjian(selSem) ? (
-                            <th className="px-3 py-3 text-xs font-bold text-amber-600 uppercase tracking-wide w-32 text-center">Nilai US</th>
+                            <>
+                              <th className="px-3 py-3 text-xs font-bold text-amber-600 uppercase tracking-wide w-32 text-center">Nilai US</th>
+                              <th className="px-3 py-3 text-xs font-bold text-purple-600 uppercase tracking-wide w-32 text-center">Nilai Ijazah</th>
+                            </>
                           ) : (
                             <>
-                              <th className="px-3 py-3 text-xs font-bold text-blue-600 uppercase tracking-wide w-28 text-center">Nilai P</th>
-                              <th className="px-3 py-3 text-xs font-bold text-blue-600 uppercase tracking-wide w-28 text-center">Nilai K</th>
-                              <th className="px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide w-28 text-center">Rata SMT</th>
+                              <th className="px-3 py-3 text-xs font-bold text-blue-600 uppercase tracking-wide w-32 text-center">Nilai Pengetahuan</th>
+                              <th className="px-3 py-3 text-xs font-bold text-purple-600 uppercase tracking-wide w-32 text-center">Nilai Ijazah</th>
                             </>
                           )}
                           <th className="px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide w-24 text-center">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
+                        {(() => {
+                          // Hitung rata raport per mapel (dari semua semester raport)
+                          const rataRaportMap: Record<number, number | null> = {}
+                          const nijMap: Record<number, number | null> = {}
+                          if (isUjian(selSem)) {
+                            mapelList.forEach(m => {
+                              const rapVals: number[] = []
+                              semList.filter(s => !isUjian(s)).forEach(s => {
+                                const rn = nilaiMap[nilaiKey(m.id, s.id)]
+                                if (rn?.nilai_p != null) rapVals.push(rn.nilai_p)
+                              })
+                              const rataRaport = rapVals.length === semList.filter(s => !isUjian(s)).length
+                                ? rapVals.reduce((a,b) => a+b, 0) / rapVals.length : null
+                              rataRaportMap[m.id] = rataRaport
+                              const usN = nilaiMap[nilaiKey(m.id, selSem.id)]
+                              const usVal = usN?.nilai_ujian ?? null
+                              nijMap[m.id] = rataRaport != null && usVal != null && sekolah
+                                ? (rataRaport * (sekolah.bobot_raport ?? 60) + usVal * (sekolah.bobot_ujian ?? 40)) / ((sekolah.bobot_raport ?? 60) + (sekolah.bobot_ujian ?? 40))
+                                : null
+                            })
+                          } else {
+                            // Untuk semester raport: nilai ijazah = rata semua sem raport (preview sementara)
+                            mapelList.forEach(m => {
+                              const rapVals: number[] = []
+                              semList.filter(s => !isUjian(s)).forEach(s => {
+                                const rn = nilaiMap[nilaiKey(m.id, s.id)]
+                                if (rn?.nilai_p != null) rapVals.push(rn.nilai_p)
+                              })
+                              rataRaportMap[m.id] = rapVals.length > 0 ? rapVals.reduce((a,b)=>a+b,0)/rapVals.length : null
+                              nijMap[m.id] = null // belum bisa dihitung tanpa nilai US
+                            })
+                          }
+                          return null
+                        })()}
                         {mapelList.map((m, i) => {
                           const n = getNilai(m.id, selSem.id)
                           const isUj = isUjian(selSem)
-                          const avg = !isUj && n.nilai_p != null && n.nilai_k != null
-                            ? ((n.nilai_p + n.nilai_k) / 2).toFixed(2) : null
-                          const filled = isUj ? n.nilai_ujian != null : (n.nilai_p != null && n.nilai_k != null)
+                          const filled = isUj ? n.nilai_ujian != null : n.nilai_p != null
 
                           return (
                             <tr key={m.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
@@ -314,19 +349,21 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
                                 ].join(' ')}>{m.kelompok}</span>
                               </td>
                               {isUj ? (
-                                <td className="px-3 py-2">
-                                  <NilaiInput value={n.nilai_ujian} onChange={v => setNilai(m.id, selSem.id, 'nilai_ujian', v)} />
-                                </td>
+                                <>
+                                  <td className="px-3 py-2">
+                                    <NilaiInput value={n.nilai_ujian} onChange={v => setNilai(m.id, selSem.id, 'nilai_ujian', v)} />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <NilaiInput value={nijMap[m.id] ?? null} readOnly />
+                                  </td>
+                                </>
                               ) : (
                                 <>
                                   <td className="px-3 py-2">
                                     <NilaiInput value={n.nilai_p} onChange={v => setNilai(m.id, selSem.id, 'nilai_p', v)} />
                                   </td>
                                   <td className="px-3 py-2">
-                                    <NilaiInput value={n.nilai_k} onChange={v => setNilai(m.id, selSem.id, 'nilai_k', v)} />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <NilaiInput value={avg ? parseFloat(avg) : null} readOnly />
+                                    <NilaiInput value={rataRaportMap[m.id] ?? null} readOnly />
                                   </td>
                                 </>
                               )}
