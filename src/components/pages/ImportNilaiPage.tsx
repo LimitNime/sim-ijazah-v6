@@ -90,7 +90,7 @@ export function ImportNilaiPage({ showToast }: { showToast: (msg: string, type?:
                     <p className="font-semibold mb-1">Aturan pengisian template:</p>
                     <ul className="space-y-0.5 list-disc list-inside">
                       <li>Jangan ubah kolom NISN, Nama Siswa, dan Mata Pelajaran</li>
-                      <li>Untuk semester raport: isi kolom <strong>Nilai P</strong> dan <strong>Nilai K</strong> (0–100)</li>
+                      <li>Untuk semester raport: isi kolom <strong>Nilai P</strong> (Nilai Pengetahuan) saja (0–100)</li>
                       <li>Untuk semester ujian: isi kolom <strong>Nilai Ujian</strong> (0–100)</li>
                       <li>Kosongkan sel jika nilai belum ada, jangan isi 0</li>
                       <li>Jangan ubah format atau tambah/hapus baris/kolom</li>
