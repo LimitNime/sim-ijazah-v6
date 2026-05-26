@@ -269,8 +269,8 @@ function registerIPC() {
         } else {
           // Cek raport: semua mapel harus ada nilai_p dan nilai_k
           const missing = mapels.filter(m => {
-            const n = db.prepare('SELECT nilai_p,nilai_k FROM nilai WHERE siswa_id=? AND mapel_id=? AND semester_id=?').get(sw.id, m.id, sem.id)
-            return !n || n.nilai_p == null || n.nilai_k == null
+            const n = db.prepare('SELECT nilai_p FROM nilai WHERE siswa_id=? AND mapel_id=? AND semester_id=?').get(sw.id, m.id, sem.id)
+            return !n || n.nilai_p == null
           })
           return { semester_id: sem.id, label: sem.label, lengkap: missing.length === 0, kurang: missing.length }
         }
@@ -282,8 +282,8 @@ function registerIPC() {
       let sum = 0, cnt = 0
       for (const m of mapels) {
         const raps = raportSems.map(sem => {
-          const n = db.prepare('SELECT nilai_p,nilai_k FROM nilai WHERE siswa_id=? AND mapel_id=? AND semester_id=?').get(sw.id, m.id, sem.id)
-          return n && n.nilai_p != null && n.nilai_k != null ? (parseFloat(n.nilai_p)+parseFloat(n.nilai_k))/2 : null
+          const n = db.prepare('SELECT nilai_p FROM nilai WHERE siswa_id=? AND mapel_id=? AND semester_id=?').get(sw.id, m.id, sem.id)
+          return n && n.nilai_p != null ? parseFloat(n.nilai_p) : null
         })
         if (raps.some(v => v === null)) continue
         const raport = raps.reduce((a,b)=>a+b,0)/raps.length
@@ -607,7 +607,7 @@ function registerIPC() {
         ['TEMPLATE IMPORT NILAI - SIM IJAZAH'],[''],
         ['PETUNJUK PENGISIAN:'],
         ['1. Jangan ubah kolom NISN, Nama Siswa, dan Mata Pelajaran'],
-        ['2. Untuk semester raport: isi kolom Nilai_P dan Nilai_K (0-100)'],
+        ['2. Untuk semester raport: isi kolom Nilai_P (Nilai Pengetahuan) saja (0-100)'],
         ['3. Untuk semester ujian: isi kolom Nilai_Ujian (0-100)'],
         ['4. Kosongkan sel jika nilai belum ada, JANGAN isi 0'],
         ['5. Jangan ubah struktur kolom'],
@@ -619,14 +619,14 @@ function registerIPC() {
       const ujianSems  = semList.filter(s => s.is_ujian)
 
       const colHeaders = ['NISN','Nama Siswa','Kode Mapel','Mata Pelajaran','Kelompok']
-      raportSems.forEach(s => { colHeaders.push(`${s.label}__P`, `${s.label}__K`) })
+      raportSems.forEach(s => { colHeaders.push(`${s.label}__P`) })
       ujianSems.forEach(s => { colHeaders.push(`${s.label}__Ujian`) })
 
       const rows = [colHeaders]
       siswaList.forEach(sw => {
         mapelList.forEach(m => {
           const row = [sw.nisn||'', sw.nama, m.id, m.nama, m.kelompok]
-          raportSems.forEach(() => { row.push('', '') })
+          raportSems.forEach(() => { row.push('') })
           ujianSems.forEach(() => { row.push('') })
           rows.push(row)
         })
@@ -677,9 +677,8 @@ function registerIPC() {
 
           raportSems.forEach(sem => {
             const p = parseVal(row[`${sem.label}__P`])
-            const k = parseVal(row[`${sem.label}__K`])
-            if (p === null && k === null) { skipped++; return }
-            try { ins.run(siswaId, mapelId, sem.id, p, k, null); imported++ }
+            if (p === null) { skipped++; return }
+            try { ins.run(siswaId, mapelId, sem.id, p, null, null); imported++ }
             catch { errors++ }
           })
           ujianSems.forEach(sem => {
@@ -726,7 +725,7 @@ function registerIPC() {
 
       // Sheet 2: Nilai
       const nilaiHeader = ['No','Mata Pelajaran','Kel.']
-      raportSems.forEach(s => nilaiHeader.push(`${s.label} (P)`, `${s.label} (K)`, `Rata ${s.label}`))
+      raportSems.forEach(s => nilaiHeader.push(`${s.label} (P)`))
       if (ujianSem) nilaiHeader.push('Nilai US')
       nilaiHeader.push('Rata Raport','Nilai Ijazah')
       const nilaiData = [nilaiHeader]
@@ -736,10 +735,8 @@ function registerIPC() {
         raportSems.forEach(s => {
           const n = getNilai(m.id, s.id)
           const p = n?.nilai_p != null ? parseFloat(n.nilai_p) : null
-          const k = n?.nilai_k != null ? parseFloat(n.nilai_k) : null
-          const avg = p!=null&&k!=null ? (p+k)/2 : null
-          row.push(p??'-', k??'-', avg!=null?avg.toFixed(2):'-')
-          if (avg!=null) rapVals.push(avg)
+          row.push(p??'-')
+          if (p!=null) rapVals.push(p)
         })
         const ujN = ujianSem ? getNilai(m.id, ujianSem.id) : null
         const ujVal = ujN?.nilai_ujian != null ? parseFloat(ujN.nilai_ujian) : null
