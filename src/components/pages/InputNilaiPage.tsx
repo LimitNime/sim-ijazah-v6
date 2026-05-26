@@ -171,6 +171,40 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
     if (ni >= 0 && ni < filteredSiswa.length) setSelSiswa(filteredSiswa[ni])
   }
 
+  // Hitung rata raport dan nilai ijazah per mapel
+  const rataRaportMap: Record<number, number | null> = {}
+  const nijMap: Record<number, number | null> = {}
+  if (selSiswa && selSem) {
+    const raportSemsFull = semList.filter(s => !isUjian(s))
+    if (isUjian(selSem)) {
+      mapelList.forEach(m => {
+        const rapVals: number[] = []
+        raportSemsFull.forEach(s => {
+          const rn = nilaiMap[nilaiKey(m.id, s.id)]
+          if (rn?.nilai_p != null) rapVals.push(rn.nilai_p)
+        })
+        const rataRaport = rapVals.length === raportSemsFull.length
+          ? rapVals.reduce((a, b) => a + b, 0) / rapVals.length : null
+        rataRaportMap[m.id] = rataRaport
+        const usN = nilaiMap[nilaiKey(m.id, selSem.id)]
+        const usVal = usN?.nilai_ujian ?? null
+        nijMap[m.id] = rataRaport != null && usVal != null && sekolah
+          ? (rataRaport * (sekolah.bobot_raport ?? 60) + usVal * (sekolah.bobot_ujian ?? 40)) / ((sekolah.bobot_raport ?? 60) + (sekolah.bobot_ujian ?? 40))
+          : null
+      })
+    } else {
+      mapelList.forEach(m => {
+        const rapVals: number[] = []
+        raportSemsFull.forEach(s => {
+          const rn = nilaiMap[nilaiKey(m.id, s.id)]
+          if (rn?.nilai_p != null) rapVals.push(rn.nilai_p)
+        })
+        rataRaportMap[m.id] = rapVals.length > 0 ? rapVals.reduce((a, b) => a + b, 0) / rapVals.length : null
+        nijMap[m.id] = null
+      })
+    }
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center h-64"><Spinner /> <span className="ml-2 text-gray-400">Memuat data...</span></div>
   )
@@ -299,40 +333,6 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {(() => {
-                          // Hitung rata raport per mapel (dari semua semester raport)
-                          const rataRaportMap: Record<number, number | null> = {}
-                          const nijMap: Record<number, number | null> = {}
-                          if (isUjian(selSem)) {
-                            mapelList.forEach(m => {
-                              const rapVals: number[] = []
-                              semList.filter(s => !isUjian(s)).forEach(s => {
-                                const rn = nilaiMap[nilaiKey(m.id, s.id)]
-                                if (rn?.nilai_p != null) rapVals.push(rn.nilai_p)
-                              })
-                              const rataRaport = rapVals.length === semList.filter(s => !isUjian(s)).length
-                                ? rapVals.reduce((a,b) => a+b, 0) / rapVals.length : null
-                              rataRaportMap[m.id] = rataRaport
-                              const usN = nilaiMap[nilaiKey(m.id, selSem.id)]
-                              const usVal = usN?.nilai_ujian ?? null
-                              nijMap[m.id] = rataRaport != null && usVal != null && sekolah
-                                ? (rataRaport * (sekolah.bobot_raport ?? 60) + usVal * (sekolah.bobot_ujian ?? 40)) / ((sekolah.bobot_raport ?? 60) + (sekolah.bobot_ujian ?? 40))
-                                : null
-                            })
-                          } else {
-                            // Untuk semester raport: nilai ijazah = rata semua sem raport (preview sementara)
-                            mapelList.forEach(m => {
-                              const rapVals: number[] = []
-                              semList.filter(s => !isUjian(s)).forEach(s => {
-                                const rn = nilaiMap[nilaiKey(m.id, s.id)]
-                                if (rn?.nilai_p != null) rapVals.push(rn.nilai_p)
-                              })
-                              rataRaportMap[m.id] = rapVals.length > 0 ? rapVals.reduce((a,b)=>a+b,0)/rapVals.length : null
-                              nijMap[m.id] = null // belum bisa dihitung tanpa nilai US
-                            })
-                          }
-                          return null
-                        })()}
                         {mapelList.map((m, i) => {
                           const n = getNilai(m.id, selSem.id)
                           const isUj = isUjian(selSem)
