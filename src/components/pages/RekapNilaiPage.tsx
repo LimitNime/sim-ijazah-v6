@@ -266,10 +266,10 @@ export function RekapNilaiPage({ showToast, onNavigate }: {
                                   const rapVals: number[] = []
                                   const rapCells = raportSems.map(s => {
                                     const n = getNilai(r.id, m.id, s.id)
-                                    if (n && n.nilai_p != null && n.nilai_k != null) {
-                                      const avg = (parseFloat(n.nilai_p) + parseFloat(n.nilai_k)) / 2
-                                      rapVals.push(avg)
-                                      return <span className="font-semibold text-blue-700">{avg.toFixed(1)}</span>
+                                    if (n && n.nilai_p != null) {
+                                      const val = parseFloat(n.nilai_p)
+                                      rapVals.push(val)
+                                      return <span className="font-semibold text-blue-700">{val.toFixed(1)}</span>
                                     }
                                     return <span className="text-red-400 font-bold">–</span>
                                   })
