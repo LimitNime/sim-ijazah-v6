@@ -124,11 +124,12 @@ function drawKopResmi(doc, s, ml, cw) {
 // ══════════════════════════════════════════════════════════════════════════
 function generateSKL(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId }) {
   const PDFDocument = require('pdfkit')
-  const doc = new PDFDocument({ size: 'A4', margin: 0 })
+  const F4skl = [609.4, 935.4]
+  const doc = new PDFDocument({ size: F4skl, margin: 0 })
   const filePath = path.join(outputPath, 'SKL_Kelulusan.pdf')
   doc.pipe(fs.createWriteStream(filePath))
 
-  const pw = doc.page.width, ph = doc.page.height
+  const pw = F4skl[0], ph = F4skl[1]
   const ml = 45, mr = 45, cw = pw - ml - mr
 
   function dotLine(x, y, w) {
@@ -345,11 +346,12 @@ function generateSKL(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, 
 
 function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId, raportSemIds, br, bu, totalB }) {
   const PDFDocument = require('pdfkit')
-  const doc = new PDFDocument({ size: 'A4', margin: 0 })
+  const F4ni = [609.4, 935.4]
+  const doc = new PDFDocument({ size: F4ni, margin: 0 })
   const filePath = path.join(outputPath, 'Nilai_Ijazah_Semua.pdf')
   doc.pipe(fs.createWriteStream(filePath))
 
-  const pw = doc.page.width, ph = doc.page.height
+  const pw = F4ni[0], ph = F4ni[1]
   const ml = 45, mr = 45, cw = pw - ml - mr
   const mb = 24
 
@@ -877,21 +879,21 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
   const GARUDA_PATH   = path.join(__electronDir, 'assets', 'garuda.jpg')
   const TUT_WURI_PATH = path.join(__electronDir, 'assets', 'tut_wuri.png')
 
-  // Garis titik-titik rapat hitam (untuk isian utama)
+  // Garis bawah teks — panjang otomatis sesuai lebar teks + padding
+  function underText(text, x, y, opts) {
+    const font = opts?.bold ? 'Helvetica-Bold' : 'Helvetica'
+    const sz   = opts?.size || 10
+    const w    = Math.min(doc.widthOfString(text, { font, fontSize: sz }) + (opts?.pad || 8), opts?.maxW || 999)
+    const cx   = opts?.cx ?? x  // center x jika perlu
+    const lx   = opts?.center ? cx - w/2 : x
+    doc.save().lineWidth(0.5).stroke('#000')
+      .moveTo(lx, y).lineTo(lx + w, y).stroke().restore()
+  }
+  // Fallback compat — tidak dipakai lagi tapi jaga-jaga
   function dotLine(x, y, w) {
-    doc.save()
-      .dash(1, { space: 2 }).lineWidth(0.55).stroke('#000')
-      .moveTo(x, y).lineTo(x + w, y).stroke()
-      .undash().restore()
+    doc.save().lineWidth(0.5).stroke('#000').moveTo(x,y).lineTo(x+w,y).stroke().restore()
   }
-
-  // Garis titik-titik abu (untuk nilai/isian sekunder)
-  function dotLineGray(x, y, w) {
-    doc.save()
-      .dash(1, { space: 2 }).lineWidth(0.45).stroke('#444')
-      .moveTo(x, y).lineTo(x + w, y).stroke()
-      .undash().restore()
-  }
+  function dotLineGray(x, y, w) {}
 
   siswaList.forEach((siswa, idx) => {
     if (idx > 0) doc.addPage()
@@ -970,12 +972,13 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
     // Di blanko terisi: nama sekolah bold di atasnya
     // ════════════════════════════════════════════════════════════════════
     if (s.nama) {
+      const namaSekolah = s.nama.toUpperCase()
       doc.font('Helvetica-Bold').fontSize(10).fillColor('#000')
-        .text(s.nama.toUpperCase(), ml, y, { width: cw, align: 'center' })
+        .text(namaSekolah, ml, y, { width: cw, align: 'center' })
       y += 12
+      underText(namaSekolah, 0, y, { bold:true, size:10, center:true, cx: ml + cw/2, pad:16 })
     }
-    dotLine(ml + 30, y, cw - 60)
-    y += 14
+    y += 10
 
     // TAHUN AJARAN
     doc.font('Helvetica').fontSize(10).fillColor('#000')
@@ -1010,12 +1013,13 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
     // NAMA SISWA — garis titik panjang (nama dicetak di atasnya oleh sistem)
     // ════════════════════════════════════════════════════════════════════
     if (siswa.nama) {
+      const namaSiswa = siswa.nama.toUpperCase()
       doc.font('Helvetica-Bold').fontSize(12).fillColor('#000')
-        .text(siswa.nama.toUpperCase(), ml, y, { width: cw, align: 'center' })
+        .text(namaSiswa, ml, y, { width: cw, align: 'center' })
       y += 13
+      underText(namaSiswa, 0, y, { bold:true, size:12, center:true, cx: ml + cw/2, pad:20 })
     }
-    dotLine(ml, y, cw)
-    y += 18
+    y += 14
 
     // ════════════════════════════════════════════════════════════════════
     // BIODATA SISWA
@@ -1031,9 +1035,14 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
       doc.font('Helvetica').fontSize(10).fillColor('#000')
         .text(label, lx, y, { width: 154, lineBreak: false })
         .text(':', sepX, y, { width: 8, lineBreak: false })
-      dotLineGray(valX, y + 12, valW)
-      if (value) doc.font('Helvetica').fontSize(10)
-        .text(value, valX + 2, y, { width: valW - 4, lineBreak: false })
+      if (value) {
+        doc.font('Helvetica').fontSize(10)
+          .text(value, valX + 2, y, { width: valW - 4, lineBreak: false })
+        // Garis hanya sepanjang teks
+        const gW = Math.min(doc.widthOfString(value, { font:'Helvetica', fontSize:10 }) + 10, valW)
+        doc.save().lineWidth(0.4).stroke('#000')
+          .moveTo(valX, y + 12).lineTo(valX + gW, y + 12).stroke().restore()
+      }
       y += 18
     }
 
@@ -1070,43 +1079,11 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
     const tglSk = fmtTgl(s.tgl_lulus)
     const noSk  = s.no_sk || ''
 
-    // Baris 1
-    const b1pre  = 'berdasarkan Keputusan Kepala '
-    const b1preW = doc.widthOfString(b1pre, { font: 'Helvetica', fontSize: 9.5 })
+    // Paragraf mengalir — satu blok teks tanpa garis
+    const paraText = `Berdasarkan Keputusan Kepala ${s.nama || ''} Nomor ${noSk} Tanggal ${tglSk} setelah memenuhi seluruh kriteria sesuai dengan peraturan perundang-undangan.`
     doc.font('Helvetica').fontSize(9.5).fillColor('#000')
-      .text(b1pre, lx, y, { lineBreak: false, continued: false })
-    const b1valW = cw - 4 - b1preW
-    dotLineGray(lx + b1preW, y + 11, b1valW)
-    if (s.nama) {
-      doc.font('Helvetica').fontSize(9.5)
-        .text(s.nama, lx + b1preW + 2, y, { width: b1valW - 4, lineBreak: false })
-    }
-    y += 14
-
-    // Baris 2 — "Nomor ... tanggal ... setelah memenuhi"
-    const p2nomor  = 'Nomor  '
-    const p2tgl    = '  tanggal  '
-    const p2setelah = '  setelah memenuhi'
-    const wNomor   = doc.widthOfString(p2nomor,   { font: 'Helvetica', fontSize: 9.5 })
-    const wTgl     = doc.widthOfString(p2tgl,     { font: 'Helvetica', fontSize: 9.5 })
-    const wSetelah = doc.widthOfString(p2setelah, { font: 'Helvetica', fontSize: 9.5 })
-    const sisa     = cw - 4 - wNomor - wTgl - wSetelah
-    const wNoSkGrs = sisa * 0.58
-    const wTglGrs  = sisa * 0.42
-
-    doc.font('Helvetica').fontSize(9.5).text(p2nomor, lx, y, { lineBreak: false, continued: false })
-    dotLineGray(lx + wNomor, y + 11, wNoSkGrs)
-    if (noSk) doc.text(noSk, lx + wNomor + 2, y, { width: wNoSkGrs - 4, lineBreak: false })
-    doc.text(p2tgl, lx + wNomor + wNoSkGrs, y, { lineBreak: false, continued: false })
-    dotLineGray(lx + wNomor + wNoSkGrs + wTgl, y + 11, wTglGrs)
-    if (tglSk) doc.text(tglSk, lx + wNomor + wNoSkGrs + wTgl + 2, y, { width: wTglGrs - 4, lineBreak: false })
-    doc.text(p2setelah, lx + wNomor + wNoSkGrs + wTgl + wTglGrs, y, { lineBreak: false })
-    y += 14
-
-    // Baris 3
-    doc.font('Helvetica').fontSize(9.5)
-      .text('seluruh kriteria sesuai dengan peraturan perundang-undangan.', lx, y, { width: cw - 8 })
-    y += 38
+      .text(paraText, lx, y, { width: cw - 8, align: 'justify', lineGap: 2 })
+    y += doc.heightOfString(paraText, { width: cw - 8, fontSize: 9.5, lineGap: 2 }) + 24
 
     // ════════════════════════════════════════════════════════════════════
     // FOTO + TTD
@@ -1142,21 +1119,23 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
     const ttdX = fotoX + fotoW + 22
     const ttdW = pw - mr - ttdX
 
-    // Garis titik atas (untuk tempat TTD)
-    dotLineGray(ttdX, fotoY, ttdW)
     doc.font('Helvetica').fontSize(10)
       .text(`${s.kota || ''}, ${tglSk}`, ttdX, fotoY + 4, { width: ttdW, align: 'center' })
     doc.text('Kepala,', ttdX, fotoY + 18, { width: ttdW, align: 'center' })
 
-    // Nama kepala & NIP sejajar bagian bawah foto
+    // Nama kepala — garis bawah dinamis sesuai panjang nama
     const namaTTDy = fotoY + fotoH - 16
     if (s.kepala) {
       doc.font('Helvetica-Bold').fontSize(9.5)
         .text(s.kepala, ttdX, namaTTDy - 13, { width: ttdW, align: 'center', underline: true })
+      // Garis bawah nama — panjang dinamis
+      const namaW = Math.min(doc.widthOfString(s.kepala, { font:'Helvetica-Bold', fontSize:9.5 }) + 10, ttdW - 10)
+      const namaX = ttdX + (ttdW - namaW) / 2
+      doc.save().lineWidth(0.5).stroke('#000')
+        .moveTo(namaX, namaTTDy).lineTo(namaX + namaW, namaTTDy).stroke().restore()
     }
-    dotLineGray(ttdX, namaTTDy, ttdW)
     doc.font('Helvetica').fontSize(9.5)
-      .text(`NIP  ${s.nip || ''}`, ttdX, namaTTDy + 4, { width: ttdW, align: 'center' })
+      .text(`NIP. ${s.nip || ''}`, ttdX, namaTTDy + 4, { width: ttdW, align: 'center' })
   })
 
   doc.end()
@@ -1219,7 +1198,7 @@ function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilai
       .text('TRANSKRIP NILAI', ml, y, { width: cw, align: 'center' })
     y += 16
     doc.font('Helvetica').fontSize(9.5)
-      .text(`Nomor: ${siswa.blanko || '...................................'}`, ml, y, { width: cw, align: 'center' })
+      .text(`Nomor: ${s.no_transkrip || '...................................'}`, ml, y, { width: cw, align: 'center' })
     y += 18
 
     // ════════════════════════════════════════════════════════════════════
@@ -1372,11 +1351,12 @@ function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilai
 
 function generateSKKelulusan(outputPath, { sekolah: s, siswaList }) {
   const PDFDocument = require('pdfkit')
-  const doc = new PDFDocument({ size: 'A4', margin: 0 })
+  const F4sk = [609.4, 935.4]
+  const doc = new PDFDocument({ size: F4sk, margin: 0 })
   const filePath = path.join(outputPath, 'SK_Penetapan_Kelulusan.pdf')
   doc.pipe(fs.createWriteStream(filePath))
 
-  const ml = 50, mr = 50, pw = doc.page.width, ph = doc.page.height
+  const ml = 50, mr = 50, pw = F4sk[0], ph = F4sk[1]
   const cw = pw - ml - mr
   const mb = 30
 
