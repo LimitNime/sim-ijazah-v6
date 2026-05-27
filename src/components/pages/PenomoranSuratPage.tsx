@@ -31,11 +31,21 @@ const JENIS_SURAT = [
   },
   {
     key: 'nilai_ijazah',
-    label: 'Nilai Ijazah / Transkrip',
+    label: 'Nilai Ijazah',
     field: 'no_nilai_ijazah',
-    keterangan: 'Nomor dokumen Nilai Ijazah/Transkrip (jika ada)',
-    contoh: '420/NI/001/V/2025',
+    keterangan: 'Muncul di header dokumen Daftar Nilai Ijazah.',
+    contoh: '421.2/NIJ/001/V/2025',
+    info: 'Muncul di header dokumen Nilai Ijazah per siswa.',
     icon: '📝',
+  },
+  {
+    key: 'transkrip',
+    label: 'Transkrip Nilai',
+    field: 'no_transkrip',
+    keterangan: 'Muncul di baris "Nomor:" pada header Transkrip Nilai.',
+    contoh: '421.2/TRN/001/V/2025',
+    info: 'Muncul di baris "Nomor:" pada header dokumen Transkrip Nilai per siswa.',
+    icon: '📋',
   },
 ]
 
