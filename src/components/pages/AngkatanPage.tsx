@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Users, GraduationCap, UserPlus, UserMinus, FileSpreadsheet, Loader2 } from 'lucide-react'
-import { Button, Modal, Input, Select, Textarea, ConfirmDialog, Badge, PageHeader, StatCard, SearchBar, Table } from '../ui'
+import { Button, Modal, Input, Select, Textarea, ConfirmDialog, Badge, PageHeader, StatCard, SearchBar, Table , InfoTooltip } from '../ui'
 import { angkatanApi, siswaApi, exportApi } from '../../lib/api'
 import type { Angkatan, Siswa } from '../../types'
 
