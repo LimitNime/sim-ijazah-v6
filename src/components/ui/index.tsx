@@ -1,4 +1,5 @@
 import React, { forwardRef, useState } from 'react'
+import ReactDOM from 'react-dom'
 import { X, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Toast, ToastType } from '../../hooks/useToast'
@@ -331,27 +332,46 @@ export function ToastContainer({ toasts, remove }: { toasts: Toast[]; remove: (i
 // Contoh: <InfoTooltip text="NISN dipakai sebagai kunci import nilai" />
 export function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top' | 'bottom' | 'left' | 'right' }) {
   const [show, setShow] = useState(false)
-  const posClass: Record<string, string> = {
-    top:    'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left:   'right-full top-1/2 -translate-y-1/2 mr-2',
-    right:  'left-full top-1/2 -translate-y-1/2 ml-2',
+  const [coords, setCoords] = useState({ top: 0, left: 0 })
+  const btnRef = React.useRef<HTMLButtonElement>(null)
+
+  function updateCoords() {
+    if (!btnRef.current) return
+    const r = btnRef.current.getBoundingClientRect()
+    let top = 0, left = 0
+    if (position === 'top')    { top = r.top - 8;       left = r.left + r.width / 2 }
+    if (position === 'bottom') { top = r.bottom + 8;    left = r.left + r.width / 2 }
+    if (position === 'left')   { top = r.top + r.height / 2; left = r.left - 8 }
+    if (position === 'right')  { top = r.top + r.height / 2; left = r.right + 8 }
+    setCoords({ top, left })
   }
+
+  const transformClass: Record<string, string> = {
+    top:    '-translate-x-1/2 -translate-y-full',
+    bottom: '-translate-x-1/2',
+    left:   '-translate-x-full -translate-y-1/2',
+    right:  '-translate-y-1/2',
+  }
+
   return (
     <span className="relative inline-flex items-center" style={{ verticalAlign: 'middle' }}>
       <button
+        ref={btnRef}
         type="button"
-        onMouseEnter={() => setShow(true)}
+        onMouseEnter={() => { updateCoords(); setShow(true) }}
         onMouseLeave={() => setShow(false)}
-        onFocus={() => setShow(true)}
+        onFocus={() => { updateCoords(); setShow(true) }}
         onBlur={() => setShow(false)}
         className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 flex items-center justify-center text-[10px] font-bold leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 shrink-0"
         aria-label="Info"
       >
         i
       </button>
-      {show && (
-        <span className={clsx('absolute z-[200] w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl pointer-events-none', posClass[position])}>
+      {show && typeof window !== 'undefined' && ReactDOM.createPortal(
+        <span
+          className={clsx('fixed z-[9999] w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl pointer-events-none', transformClass[position])}
+          style={{ top: coords.top, left: coords.left }}
+        >
           {text}
           <span className={clsx('absolute w-2 h-2 bg-gray-900 rotate-45',
             position === 'top'    ? 'top-full left-1/2 -translate-x-1/2 -mt-1' :
@@ -359,7 +379,8 @@ export function InfoTooltip({ text, position = 'top' }: { text: string; position
             position === 'left'   ? 'left-full top-1/2 -translate-y-1/2 -ml-1' :
                                     'right-full top-1/2 -translate-y-1/2 mr-[-4px]'
           )} />
-        </span>
+        </span>,
+        document.body
       )}
     </span>
   )
