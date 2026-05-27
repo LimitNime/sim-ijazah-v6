@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Save, School, Upload, X, ImageIcon } from 'lucide-react'
-import { Button, Input, Select, PageHeader, SectionCard } from '../ui'
+import { Button, Input, Select, PageHeader, SectionCard , InfoTooltip } from '../ui'
 import { sekolahApi } from '../../lib/api'
 import type { Sekolah } from '../../types'
 
@@ -114,15 +114,15 @@ export function SekolahPage({ showToast }: { showToast: (msg: string, type?: any
       <SectionCard title="Identitas Sekolah">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <Input label="Nama Sekolah *" value={form.nama || ''} onChange={e => set('nama', e.target.value)} placeholder="Nama lengkap sekolah" />
+            <Input label={<span className="flex items-center gap-1">Nama Sekolah <InfoTooltip text="Muncul di kop surat semua dokumen: SKL, DKN, Transkrip, Nilai Ijazah, SK Kelulusan, SKKB." /></span>} value={form.nama || ''} onChange={e => set('nama', e.target.value)} placeholder="Nama lengkap sekolah" />
           </div>
           <Input label="Nama Singkat / Akronim" value={form.nama_singkat || ''} onChange={e => set('nama_singkat', e.target.value)} placeholder="mis. SMPIT Badrussalam" />
           <Input label="Yayasan / Penyelenggara" value={form.yayasan || ''} onChange={e => set('yayasan', e.target.value)} placeholder="Nama yayasan (opsional, muncul di kop)" />
           <Input label="Jenis Sekolah" value={form.jenis_sekolah || ''} onChange={e => set('jenis_sekolah', e.target.value)} placeholder="mis. SMP ISLAM TERPADU" />
           <Input label="NSS / NSM" value={form.nss || ''} onChange={e => set('nss', e.target.value)} placeholder="Nomor Statistik Sekolah" />
-          <Input label="NPSN" value={form.npsn || ''} onChange={e => set('npsn', e.target.value)} placeholder="Nomor Pokok Sekolah Nasional" />
-          <Input label="Kepala Sekolah *" value={form.kepala || ''} onChange={e => set('kepala', e.target.value)} placeholder="Nama kepala sekolah" />
-          <Input label="NIP Kepala Sekolah" value={form.nip || ''} onChange={e => set('nip', e.target.value)} placeholder="NIP (kosongkan jika tidak ada)" />
+          <Input label={<span className="flex items-center gap-1">NPSN <InfoTooltip text="Nomor Pokok Sekolah Nasional — muncul di kop surat dan biodata Transkrip Nilai." /></span>} value={form.npsn || ''} onChange={e => set('npsn', e.target.value)} placeholder="Nomor Pokok Sekolah Nasional" />
+          <Input label={<span className="flex items-center gap-1">Kepala Sekolah <InfoTooltip text="Nama kepala sekolah yang muncul di bagian TTD semua dokumen resmi." /></span>} value={form.kepala || ''} onChange={e => set('kepala', e.target.value)} placeholder="Nama kepala sekolah" />
+          <Input label={<span className="flex items-center gap-1">NIP Kepala Sekolah <InfoTooltip text="Muncul di bawah nama kepala sekolah pada bagian TTD semua dokumen." /></span>} value={form.nip || ''} onChange={e => set('nip', e.target.value)} placeholder="NIP (kosongkan jika tidak ada)" />
           <div className="col-span-2">
             <Input label="Alamat Baris 1" value={form.alamat || ''} onChange={e => set('alamat', e.target.value)} placeholder="Jl. ..." />
           </div>
@@ -143,14 +143,14 @@ export function SekolahPage({ showToast }: { showToast: (msg: string, type?: any
       <SectionCard title="Konfigurasi Akademik">
         <div className="grid grid-cols-2 gap-4">
           <Select label="Jenjang Sekolah" value={form.jenjang || 'MI'} onChange={e => set('jenjang', e.target.value)} options={JENJANG} />
-          <Input label="Tahun Ajaran *" value={form.tahun_ajaran || ''} onChange={e => set('tahun_ajaran', e.target.value)} placeholder="2024/2025" />
-          <Input label="Tanggal Penetapan Lulus" type="date" value={form.tgl_lulus || ''} onChange={e => set('tgl_lulus', e.target.value)} />
+          <Input label={<span className="flex items-center gap-1">Tahun Ajaran <InfoTooltip text="Muncul di judul DKN dan dokumen Nilai Ijazah. Format: 2024/2025." /></span>} value={form.tahun_ajaran || ''} onChange={e => set('tahun_ajaran', e.target.value)} placeholder="2024/2025" />
+          <Input label={<span className="flex items-center gap-1">Tanggal Penetapan Lulus <InfoTooltip text="Tanggal kelulusan resmi — muncul di bagian TTD semua dokumen: SKL, Nilai Ijazah, Transkrip, DKN, SK Kelulusan." /></span>} type="date" value={form.tgl_lulus || ''} onChange={e => set('tgl_lulus', e.target.value)} />
           <div />
           <Input label="Program Keahlian" value={form.program_keahlian || ''} onChange={e => set('program_keahlian', e.target.value)} placeholder="Teknologi Informasi dan Komunikasi" />
           <Input label="Kompetensi Keahlian" value={form.kompetensi_keahlian || ''} onChange={e => set('kompetensi_keahlian', e.target.value)} placeholder="Rekayasa Perangkat Lunak" />
           <Input label="Nama Instansi Penerbit SK" value={form.keputusan_kepala || ''} onChange={e => set('keputusan_kepala', e.target.value)} placeholder="Kepala Dinas Pendidikan Provinsi ..." />
           <Input label="Nomor SK Kelulusan" value={form.no_sk || ''} onChange={e => set('no_sk', e.target.value)} placeholder="420/1234/Disdik" />
-          <Input label="Tanggal Rapat Dewan Guru" type="date" value={form.tgl_rapat || ''} onChange={e => set('tgl_rapat', e.target.value)} />
+          <Input label={<span className="flex items-center gap-1">Tanggal Rapat Dewan Guru <InfoTooltip text="Muncul di teks SK Kelulusan sebagai tanggal rapat penentuan kelulusan." /></span>} type="date" value={form.tgl_rapat || ''} onChange={e => set('tgl_rapat', e.target.value)} />
           <Input label="Jenis Kekhususan (opsional)" value={form.jenis_kekhususan || ''} onChange={e => set('jenis_kekhususan', e.target.value)} placeholder="mis. Umum / Kekhususan" />
           <div className="col-span-2">
             <Input label="Nomor SKKB Default" value={form.no_skkb || ''} onChange={e => set('no_skkb', e.target.value)} placeholder="mis. 421/SKKB/001/2025" />
