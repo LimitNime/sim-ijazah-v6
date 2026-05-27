@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react'
+import React, { forwardRef, useState } from 'react'
 import { X, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Toast, ToastType } from '../../hooks/useToast'
@@ -322,6 +322,46 @@ export function ToastContainer({ toasts, remove }: { toasts: Toast[]; remove: (i
         </div>
       ))}
     </div>
+  )
+}
+
+
+// ── InfoTooltip ───────────────────────────────────────────────────────────
+// Ikon ⓘ kecil yang menampilkan tooltip saat di-hover
+// Contoh: <InfoTooltip text="NISN dipakai sebagai kunci import nilai" />
+export function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top' | 'bottom' | 'left' | 'right' }) {
+  const [show, setShow] = useState(false)
+  const posClass: Record<string, string> = {
+    top:    'bottom-full left-1/2 -translate-x-1/2 mb-2',
+    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
+    left:   'right-full top-1/2 -translate-y-1/2 mr-2',
+    right:  'left-full top-1/2 -translate-y-1/2 ml-2',
+  }
+  return (
+    <span className="relative inline-flex items-center" style={{ verticalAlign: 'middle' }}>
+      <button
+        type="button"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 flex items-center justify-center text-[10px] font-bold leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 shrink-0"
+        aria-label="Info"
+      >
+        i
+      </button>
+      {show && (
+        <span className={clsx('absolute z-[200] w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl pointer-events-none', posClass[position])}>
+          {text}
+          <span className={clsx('absolute w-2 h-2 bg-gray-900 rotate-45',
+            position === 'top'    ? 'top-full left-1/2 -translate-x-1/2 -mt-1' :
+            position === 'bottom' ? 'bottom-full left-1/2 -translate-x-1/2 mb-[-4px]' :
+            position === 'left'   ? 'left-full top-1/2 -translate-y-1/2 -ml-1' :
+                                    'right-full top-1/2 -translate-y-1/2 mr-[-4px]'
+          )} />
+        </span>
+      )}
+    </span>
   )
 }
 
