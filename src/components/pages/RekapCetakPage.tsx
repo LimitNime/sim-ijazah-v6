@@ -43,28 +43,9 @@ export function RekapCetakPage({ showToast }: { showToast: (msg: string, type?: 
 
   const exportExcel = async (angkatan_id?: number | null) => {
     try {
-      if (angkatan_id) {
-        // Export detail per angkatan lewat backend (ada nilai per mapel)
-        const result = await exportApi.excelAngkatan(angkatan_id) as any
-        if (result?.ok) showToast('Export Excel angkatan berhasil')
-        else showToast(result?.message || 'Gagal export', 'error')
-      } else {
-        // Export ringkasan semua siswa
-        const XLSX = await import('xlsx')
-        const wsData = [
-          [`REKAP NILAI — ${sekolah?.nama ?? ''}`],
-          [`Tahun Ajaran: ${sekolah?.tahun_ajaran ?? ''}`],
-          [],
-          ['No','Nama Siswa','NISN','Jumlah Nilai','Nilai Ijazah','Status'],
-          ...data.map(r => [r.no_urut, r.nama, r.nisn||'-', r.jml_nilai, r.nilai_ijazah?.toFixed(2)??'-', r.lengkap?'Lengkap':'Belum Lengkap'])
-        ]
-        const ws = (XLSX as any).utils.aoa_to_sheet(wsData)
-        ws['!cols'] = [{wch:6},{wch:32},{wch:16},{wch:12},{wch:14},{wch:16}]
-        const wb = (XLSX as any).utils.book_new()
-        ;(XLSX as any).utils.book_append_sheet(wb, ws, 'Rekap Nilai')
-        ;(XLSX as any).writeFile(wb, `Rekap_Nilai_${sekolah?.tahun_ajaran?.replace('/','_')??'Export'}.xlsx`)
-        showToast('Export Excel berhasil')
-      }
+      const result = await exportApi.excelAngkatan(angkatan_id ?? null) as any
+      if (result?.ok) showToast('Export Excel berhasil')
+      else showToast(result?.error || result?.message || 'Gagal export', 'error')
     } catch (e: any) { showToast(`Gagal export: ${e.message}`, 'error') }
   }
 
