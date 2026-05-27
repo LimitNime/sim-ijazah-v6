@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, BookOpen, Layers, Star } from 'lucide-react'
-import { StatCard, Table, Button, SearchBar, Modal, Input, Select, ConfirmDialog, Badge, PageHeader } from '../ui'
+import { StatCard, Table, Button, SearchBar, Modal, Input, Select, ConfirmDialog, Badge, PageHeader , InfoTooltip } from '../ui'
 import { mapelApi } from '../../lib/api'
 import type { Mapel } from '../../types'
 
@@ -154,7 +154,7 @@ export function MapelPage({ showToast }: { showToast: (msg: string, type?: any) 
             <Select label="Kelompok" value={modal.form.kelompok || 'A'} onChange={e => set('kelompok', e.target.value)} options={KEL_OPT} />
             <Select label="Jenis" value={String(modal.form.is_mulok ?? 0)} onChange={e => set('is_mulok', Number(e.target.value))} options={MULOK_OPT} />
           </div>
-          <Input label="Urutan" type="number" value={modal.form.urutan || 1} onChange={e => set('urutan', Number(e.target.value))} />
+          <Input label={<span className="flex items-center gap-1">Urutan <InfoTooltip text="Urutan tampil mapel di tabel DKN, Nilai Ijazah, dan Transkrip. Isi angka kecil untuk muncul lebih atas." /></span>}  type="number" value={modal.form.urutan || 1} onChange={e => set('urutan', Number(e.target.value))} />
         </div>
       </Modal>
 
