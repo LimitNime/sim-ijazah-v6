@@ -301,7 +301,7 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
                           : 'bg-blue-600 text-white border-blue-600'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     ].join(' ')}>
-                    {sem.label}
+                    {sem.label.length > 18 ? sem.label.slice(0, 16) + '…' : sem.label}
                   </button>
                 ))}
               </div>
