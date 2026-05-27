@@ -323,15 +323,15 @@ function generateSKL(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, 
       .text(`${kotaStr}, ${tglStr}`, ttdX, y, { width: ttdW, align: 'center' })
     y += 12
     doc.text('Kepala Sekolah,', ttdX, y, { width: ttdW, align: 'center' })
-    y += 52  // ruang tanda tangan lebih lega
+    y += 85  // 3cm ruang tanda tangan
 
-    const garisW = 160  // garis TTD diperlebar
+    const namaKepalaSkl = s.kepala ? s.kepala.toUpperCase() : ''
+    const garisW = Math.min(ttdW - 10, Math.max(80, namaKepalaSkl.length * 5.8))
     const garisX = ttdX + (ttdW - garisW) / 2
     doc.moveTo(garisX, y).lineTo(garisX + garisW, y).lineWidth(0.7).stroke('#000')
-    if (s.kepala) {
-      // Nama kepala: bold + underline seperti template asli
+    if (namaKepalaSkl) {
       doc.font('Helvetica-Bold').fontSize(9.5)
-        .text(s.kepala.toUpperCase(), ttdX, y - 14, { width: ttdW, align: 'center', underline: true })
+        .text(namaKepalaSkl, ttdX, y - 15, { width: ttdW, align: 'center', underline: true })
     }
     y += 4
     doc.font('Helvetica').fontSize(9)
@@ -361,9 +361,9 @@ function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nil
   function calcNij(siswaId, mapelId) {
     const nils = nilaiData[siswaId] || []
     const raps = nils.filter(n => raportSemIds.includes(n.semester_id)
-      && n.nilai_p != null && n.nilai_k != null && n.mapel_id === mapelId)
+      && n.nilai_p != null && n.mapel_id === mapelId)
     if (!raps.length) return { raport: null, ujian: null, nij: null }
-    const raport = raps.reduce((a,r) => a + (parseFloat(r.nilai_p)+parseFloat(r.nilai_k))/2, 0) / raps.length
+    const raport = raps.reduce((a,r) => a + parseFloat(r.nilai_p), 0) / raps.length
     const um = nils.find(n => n.mapel_id === mapelId && n.semester_id === ujianSemId && n.nilai_ujian != null)
     const ujian = um ? parseFloat(um.nilai_ujian) : null
     const nij = ujian != null ? (raport * br + ujian * bu) / totalB : null
@@ -413,9 +413,10 @@ function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nil
     // rowH kecil ~14pt
     // ════════════════════════════════════════════════════════════════════
     const noW    = 28
-    const nilR   = 65   // Nilai Rata-rata Rapor
-    const nilU   = 65   // Nilai Ujian Sekolah
-    const mpW    = cw - noW - nilR - nilU
+    const nilR   = 58   // Nilai Rata-rata Rapor
+    const nilU   = 58   // Nilai Ujian Sekolah
+    const nilIj  = 58   // Nilai Ijazah
+    const mpW    = cw - noW - nilR - nilU - nilIj
     const hdrH   = 28   // header 2 baris
     const rowH   = 14
     const grpH   = 14   // tinggi baris kelompok (sub-header)
@@ -423,19 +424,21 @@ function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nil
 
     // ── Header ────────────────────────────────────────────────────────
     doc.rect(ml, y, cw, hdrH).lineWidth(0.7).stroke('#000')
-    // garis vertikal header
-    doc.moveTo(ml+noW,           y).lineTo(ml+noW,           y+hdrH).lineWidth(0.5).stroke('#000')
-    doc.moveTo(ml+noW+mpW,       y).lineTo(ml+noW+mpW,       y+hdrH).lineWidth(0.5).stroke('#000')
-    doc.moveTo(ml+noW+mpW+nilR,  y).lineTo(ml+noW+mpW+nilR,  y+hdrH).lineWidth(0.5).stroke('#000')
+    doc.moveTo(ml+noW,                    y).lineTo(ml+noW,                    y+hdrH).lineWidth(0.5).stroke('#000')
+    doc.moveTo(ml+noW+mpW,                y).lineTo(ml+noW+mpW,                y+hdrH).lineWidth(0.5).stroke('#000')
+    doc.moveTo(ml+noW+mpW+nilR,           y).lineTo(ml+noW+mpW+nilR,           y+hdrH).lineWidth(0.5).stroke('#000')
+    doc.moveTo(ml+noW+mpW+nilR+nilU,      y).lineTo(ml+noW+mpW+nilR+nilU,      y+hdrH).lineWidth(0.5).stroke('#000')
 
     doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#000')
-      .text('No.',                    ml,                  y+9,  { width: noW,  align: 'center' })
-      .text('Mata Pelajaran',         ml+noW,              y+3,  { width: mpW,  align: 'center' })
-      .text(`(${s.kurikulum||'Kurikulum Merdeka'})`, ml+noW, y+13, { width: mpW,  align: 'center' })
-      .text('Nilai Rata-rata',        ml+noW+mpW,          y+3,  { width: nilR, align: 'center' })
-      .text('Rapor',                  ml+noW+mpW,          y+13, { width: nilR, align: 'center' })
-      .text('Nilai Ujian',            ml+noW+mpW+nilR,     y+3,  { width: nilU, align: 'center' })
-      .text('Sekolah',                ml+noW+mpW+nilR,     y+13, { width: nilU, align: 'center' })
+      .text('No.',                    ml,                       y+9,  { width: noW,   align: 'center' })
+      .text('Mata Pelajaran',         ml+noW,                   y+3,  { width: mpW,   align: 'center' })
+      .text(`(${s.kurikulum||'Kurikulum Merdeka'})`, ml+noW,    y+13, { width: mpW,   align: 'center' })
+      .text('Nilai Rata-rata',        ml+noW+mpW,               y+3,  { width: nilR,  align: 'center' })
+      .text('Rapor',                  ml+noW+mpW,               y+13, { width: nilR,  align: 'center' })
+      .text('Nilai Ujian',            ml+noW+mpW+nilR,          y+3,  { width: nilU,  align: 'center' })
+      .text('Sekolah',                ml+noW+mpW+nilR,          y+13, { width: nilU,  align: 'center' })
+      .text('Nilai',                  ml+noW+mpW+nilR+nilU,     y+3,  { width: nilIj, align: 'center' })
+      .text('Ijazah',                 ml+noW+mpW+nilR+nilU,     y+13, { width: nilIj, align: 'center' })
     y += hdrH
 
     // ── Baris data dengan kelompok ────────────────────────────────────
@@ -447,10 +450,12 @@ function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nil
 
     function drawRow(m, noStr, isGroup = false) {
       const tY = y + 3
-      doc.rect(ml, y, cw, isGroup ? grpH : rowH).lineWidth(0.5).stroke('#000')
-      doc.moveTo(ml+noW,          y).lineTo(ml+noW,          y+(isGroup?grpH:rowH)).lineWidth(0.4).stroke('#000')
-      doc.moveTo(ml+noW+mpW,      y).lineTo(ml+noW+mpW,      y+(isGroup?grpH:rowH)).lineWidth(0.4).stroke('#000')
-      doc.moveTo(ml+noW+mpW+nilR, y).lineTo(ml+noW+mpW+nilR, y+(isGroup?grpH:rowH)).lineWidth(0.4).stroke('#000')
+      const rH = isGroup ? grpH : rowH
+      doc.rect(ml, y, cw, rH).lineWidth(0.5).stroke('#000')
+      doc.moveTo(ml+noW,               y).lineTo(ml+noW,               y+rH).lineWidth(0.4).stroke('#000')
+      doc.moveTo(ml+noW+mpW,           y).lineTo(ml+noW+mpW,           y+rH).lineWidth(0.4).stroke('#000')
+      doc.moveTo(ml+noW+mpW+nilR,      y).lineTo(ml+noW+mpW+nilR,      y+rH).lineWidth(0.4).stroke('#000')
+      doc.moveTo(ml+noW+mpW+nilR+nilU, y).lineTo(ml+noW+mpW+nilR+nilU, y+rH).lineWidth(0.4).stroke('#000')
 
       if (isGroup) {
         // Baris kelompok — span penuh, italic
@@ -466,34 +471,25 @@ function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nil
       doc.font('Helvetica').fontSize(9).fillColor('#000')
         .text(noStr, ml+2, tY, { width: noW-4, align: 'center' })
         .text(m.nama || '', ml+noW+3, tY, { width: mpW-6 })
-      if (raport != null) doc.text(raport.toFixed(2), ml+noW+mpW+2, tY, { width: nilR-4, align: 'center' })
-      if (ujian  != null) doc.text(ujian.toFixed(0),  ml+noW+mpW+nilR+2, tY, { width: nilU-4, align: 'center' })
+      if (raport != null) doc.text(raport.toFixed(2), ml+noW+mpW+2,          tY, { width: nilR-4,  align: 'center' })
+      if (ujian  != null) doc.text(ujian.toFixed(2),  ml+noW+mpW+nilR+2,     tY, { width: nilU-4,  align: 'center' })
+      if (nij    != null) doc.text(nij.toFixed(2),    ml+noW+mpW+nilR+nilU+2, tY, { width: nilIj-4, align: 'center' })
       y += rowH
     }
 
-    if (hasKelompok) {
-      // Kelompok A
-      drawRow(null, 'Kelompok A', true)
-      mapelA.forEach((m, i) => { drawRow(m, `${i+1}.`) })
-      // Kelompok B
-      if (mapelB.length) {
-        drawRow(null, 'Kelompok B', true)
-        mapelB.forEach((m, i) => { drawRow(m, `${i+1}.`) })
-      }
-    } else {
-      // Tanpa kelompok — nomor urut biasa
-      mapelList.forEach((m, i) => { drawRow(m, `${i+1}.`) })
-    }
+    // Selalu pakai nomor urut biasa tanpa label Kelompok A/B
+    mapelList.forEach((m, i) => { drawRow(m, `${i+1}.`) })
 
     // Baris Rata-rata
     const rata = allNij.length ? (allNij.reduce((a,b)=>a+b,0)/allNij.length) : null
     doc.rect(ml, y, cw, rowH+2).lineWidth(0.7).stroke('#000')
-    doc.moveTo(ml+noW+mpW,      y).lineTo(ml+noW+mpW,      y+rowH+2).lineWidth(0.5).stroke('#000')
-    doc.moveTo(ml+noW+mpW+nilR, y).lineTo(ml+noW+mpW+nilR, y+rowH+2).lineWidth(0.5).stroke('#000')
+    doc.moveTo(ml+noW+mpW,               y).lineTo(ml+noW+mpW,               y+rowH+2).lineWidth(0.5).stroke('#000')
+    doc.moveTo(ml+noW+mpW+nilR,          y).lineTo(ml+noW+mpW+nilR,          y+rowH+2).lineWidth(0.5).stroke('#000')
+    doc.moveTo(ml+noW+mpW+nilR+nilU,     y).lineTo(ml+noW+mpW+nilR+nilU,     y+rowH+2).lineWidth(0.5).stroke('#000')
     doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
       .text('Rata-rata', ml+noW+2, y+3, { width: mpW-4, align: 'center' })
     if (rata != null) {
-      doc.text(rata.toFixed(2), ml+noW+mpW+nilR+2, y+3, { width: nilU-4, align: 'center' })
+      doc.text(rata.toFixed(2), ml+noW+mpW+nilR+nilU+2, y+3, { width: nilIj-4, align: 'center' })
     }
 
     // Border luar tabel
@@ -514,17 +510,17 @@ function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nil
       .text(`${kotaStr}, ${tglStr}`, ttdX, y, { width: ttdW, align: 'center' })
     y += 12
     doc.text(`Kepala ${s.nama || ''}`, ttdX, y, { width: ttdW, align: 'center' })
-    y += 44  // ruang TTD
+    y += 85  // 3cm ruang tanda tangan
 
-    // Garis pendek centered di bawah nama
-    const garisW = 110
-    const garisX = ttdX + (ttdW - garisW) / 2
-    doc.moveTo(garisX, y).lineTo(garisX+garisW, y).lineWidth(0.7).stroke('#000')
-    if (s.kepala) {
+    const namaKepalaNi = s.kepala ? s.kepala.toUpperCase() : ''
+    const garisWni = Math.min(ttdW - 10, Math.max(80, namaKepalaNi.length * 5.8))
+    const garisXni = ttdX + (ttdW - garisWni) / 2
+    doc.moveTo(garisXni, y).lineTo(garisXni+garisWni, y).lineWidth(0.7).stroke('#000')
+    if (namaKepalaNi) {
       doc.font('Helvetica-Bold').fontSize(9.5)
-        .text(s.kepala, ttdX, y-13, { width: ttdW, align: 'center' })
+        .text(namaKepalaNi, ttdX, y-15, { width: ttdW, align: 'center', underline: true })
     }
-    y += 4
+    y += 5
     doc.font('Helvetica').fontSize(9)
       .text(`NIP. ${s.nip || ''}`, ttdX, y, { width: ttdW, align: 'center' })
   })
@@ -535,41 +531,28 @@ function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nil
 
 function generateDKN(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId, raportSemIds, br, bu, totalB }) {
   const PDFDocument = require('pdfkit')
-  const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 0 })
+  // F4 landscape = 330mm x 215mm → dalam pt
+  const F4L = [935.4, 609.4]
+  const doc = new PDFDocument({ size: F4L, margin: 0 })
   const filePath = path.join(outputPath, 'DKN_Lengkap.pdf')
   doc.pipe(fs.createWriteStream(filePath))
 
-  const pw = doc.page.width, ph = doc.page.height  // 841 x 595
+  const pw = F4L[0], ph = F4L[1]
   const ml = 25, mr = 25, mt = 20, mb = 20
   const cw = pw - ml - mr
 
   function calcNij(siswaId, mapelId) {
     const nils = nilaiData[siswaId] || []
-    const raps = nils.filter(n => raportSemIds.includes(n.semester_id) && n.nilai_p != null && n.nilai_k != null && n.mapel_id === mapelId)
+    const raps = nils.filter(n => raportSemIds.includes(n.semester_id) && n.nilai_p != null && n.mapel_id === mapelId)
     if (!raps.length) return null
-    const raport = raps.reduce((a, r) => a + (parseFloat(r.nilai_p) + parseFloat(r.nilai_k)) / 2, 0) / raps.length
+    const raport = raps.reduce((a, r) => a + parseFloat(r.nilai_p), 0) / raps.length
     const um = nils.find(n => n.mapel_id === mapelId && n.semester_id === ujianSemId && n.nilai_ujian != null)
     if (!um) return null
     return (raport * br + parseFloat(um.nilai_ujian) * bu) / totalB
   }
 
-  // ── KOP landscape ─────────────────────────────────────────────────────
-  let y = mt
-  doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
-    .text('KOP SATUAN PENDIDIKAN', ml, y, { width: cw, align: 'center' })
-  if (s.nama) {
-    y += 11
-    doc.font('Helvetica-Bold').fontSize(11)
-      .text(s.nama.toUpperCase(), ml, y, { width: cw, align: 'center' })
-  }
-  if (s.alamat || s.npsn) {
-    y += 12
-    const k2 = [s.alamat, s.npsn ? `NPSN: ${s.npsn}` : ''].filter(Boolean).join('   |   ')
-    doc.font('Helvetica').fontSize(8).text(k2, ml, y, { width: cw, align: 'center' })
-  }
-  y += 12
-  doc.moveTo(ml, y).lineTo(ml + cw, y).lineWidth(1.5).stroke('#000')
-  y += 10
+  // ── KOP landscape — pakai drawKopBadrussalam ──────────────────────────
+  let y = drawKopBadrussalam(doc, s, ml, cw, mt)
 
   // ── JUDUL ─────────────────────────────────────────────────────────────
   doc.font('Helvetica-Bold').fontSize(12).fillColor('#000')
@@ -587,10 +570,11 @@ function generateDKN(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, 
   const rataW  = 46
   const sisaW  = cw - noW - namaW - nisnW - rataW
   // Lebar kolom nilai per mapel (minimal 26pt)
-  const mW     = Math.max(26, Math.floor(sisaW / Math.max(n, 1)))
-  const hdrH   = 28   // tinggi header 2 baris
-  const rowH   = Math.max(14, Math.floor((ph - mb - y - hdrH) / Math.max(siswaList.length, 1)))
-  const clampedRowH = Math.min(rowH, 22)  // jangan terlalu tinggi
+  const mW      = Math.max(26, Math.floor(sisaW / Math.max(n, 1)))
+  const hdrH    = 28    // tinggi header 2 baris
+  const ttdResv = 145   // ruang TTD di bawah tabel (3cm = 85pt + teks)
+  const rowH    = Math.max(14, Math.floor((ph - mb - ttdResv - y - hdrH) / Math.max(siswaList.length, 1)))
+  const clampedRowH = Math.min(Math.max(rowH, 14), 20)  // 14-20pt, proporsional di landscape
 
   // ── HEADER TABEL ──────────────────────────────────────────────────────
   const tblTop = y
@@ -687,27 +671,36 @@ function generateDKN(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, 
     y += clampedRowH
   })
 
-  // Garis bawah tabel
-  doc.moveTo(ml, tblTop).lineTo(ml, y).lineWidth(0.7).stroke('#000')
-  doc.moveTo(ml + cw, tblTop).lineTo(ml + cw, y).lineWidth(0.7).stroke('#000')
+  // Garis bawah tabel (hanya garis horizontal bawah — vertikal sudah per baris)
   doc.moveTo(ml, y).lineTo(ml + cw, y).lineWidth(0.7).stroke('#000')
 
   // ── TTD (pojok kanan bawah) ───────────────────────────────────────────
-  y += 14
+  // Jika tidak cukup ruang untuk TTD di halaman ini, pindah ke halaman baru
+  if (y + 145 > ph - mb) {
+    doc.addPage()
+    y = mt
+  }
+  y += 16
   const tglSk = fmtTgl(s.tgl_lulus)
-  const ttdX  = pw - mr - 180
-  const ttdW  = 180
+  const ttdX  = pw - mr - 210
+  const ttdW  = 210
 
-  doc.font('Helvetica').fontSize(9).fillColor('#000')
+  doc.font('Helvetica').fontSize(9.5).fillColor('#000')
     .text(`${s.kota || ''}, ${tglSk}`, ttdX, y, { width: ttdW, align: 'center' })
-  y += 12
+  y += 13
   doc.text(`Kepala ${s.nama || ''}`, ttdX, y, { width: ttdW, align: 'center' })
-  y += 40
-  doc.moveTo(ttdX, y).lineTo(ttdX + ttdW, y).lineWidth(0.7).stroke('#000')
-  if (s.kepala) doc.font('Helvetica-Bold').fontSize(9).text(s.kepala, ttdX, y - 11, { width: ttdW, align: 'center' })
-  y += 4
+  y += 85  // 3cm ruang tanda tangan
+  const namaKepalaDkn = s.kepala ? s.kepala.toUpperCase() : ''
+  const garisWdkn = Math.min(ttdW - 10, Math.max(80, namaKepalaDkn.length * 5.8))
+  const garisXdkn = ttdX + (ttdW - garisWdkn) / 2
+  doc.moveTo(garisXdkn, y).lineTo(garisXdkn + garisWdkn, y).lineWidth(0.7).stroke('#000')
+  if (namaKepalaDkn) {
+    doc.font('Helvetica-Bold').fontSize(9.5)
+      .text(namaKepalaDkn, ttdX, y - 16, { width: ttdW, align: 'center', underline: true })
+  }
+  y += 6
   doc.font('Helvetica').fontSize(9)
-    .text(`NIP ${s.nip || ''}`, ttdX, y, { width: ttdW, align: 'center' })
+    .text(`NIP. ${s.nip || ''}`, ttdX, y, { width: ttdW, align: 'center' })
 
   doc.end()
   return filePath
@@ -747,9 +740,9 @@ function exportExcelAngkatan(outputPath, { sekolah: s, angkatan, siswaList, mape
     mapelList.forEach(m => {
       raportSems.forEach(sm => {
         const n = nils.find(n => n.mapel_id===m.id && n.semester_id===sm.id)
-        if (n && n.nilai_p!=null && n.nilai_k!=null) {
-          const avg = (parseFloat(n.nilai_p)+parseFloat(n.nilai_k))/2
-          row.push(parseFloat(avg.toFixed(2))); jumlah+=avg; cnt++
+        if (n && n.nilai_p!=null) {
+          const val = parseFloat(n.nilai_p)
+          row.push(parseFloat(val.toFixed(2))); jumlah+=val; cnt++
         } else {
           row.push('')
         }
@@ -799,9 +792,9 @@ function exportExcelAngkatan(outputPath, { sekolah: s, angkatan, siswaList, mape
 
       raportSems.forEach(sm => {
         const n = nils.find(n => n.mapel_id===m.id && n.semester_id===sm.id)
-        if (n && n.nilai_p!=null && n.nilai_k!=null) {
-          const avg = (parseFloat(n.nilai_p)+parseFloat(n.nilai_k))/2
-          row.push(parseFloat(avg.toFixed(2))); raps.push(avg)
+        if (n && n.nilai_p!=null) {
+          const val = parseFloat(n.nilai_p)
+          row.push(parseFloat(val.toFixed(2))); raps.push(val)
         } else { row.push('') }
       })
 
@@ -835,8 +828,8 @@ function exportExcelAngkatan(outputPath, { sekolah: s, angkatan, siswaList, mape
     const nils = nilaiData[siswa.id]||[]
     let sum=0, cnt=0
     mapelList.forEach(m => {
-      const raps = nils.filter(n=>raportSemIds.includes(n.semester_id)&&n.nilai_p!=null&&n.nilai_k!=null)
-      const raport = raps.length ? raps.reduce((a,r)=>a+(parseFloat(r.nilai_p)+parseFloat(r.nilai_k))/2,0)/raps.length : null
+      const raps = nils.filter(n=>raportSemIds.includes(n.semester_id)&&n.nilai_p!=null&&n.mapel_id===m.id)
+      const raport = raps.length ? raps.reduce((a,r)=>a+parseFloat(r.nilai_p),0)/raps.length : null
       const um = nils.find(n=>n.mapel_id===m.id&&n.semester_id===ujianSemId&&n.nilai_ujian!=null)
       const nij = raport!=null&&um ? (raport*br+parseFloat(um.nilai_ujian)*bu)/totalB : null
       row.push(nij!=null ? parseFloat(nij.toFixed(2)) : '')
@@ -1181,13 +1174,15 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
 // ══════════════════════════════════════════════════════════════════════════
 //  TRANSKRIP NILAI — sesuai blanko resmi, tabel penuh mengisi halaman
 // ══════════════════════════════════════════════════════════════════════════
-function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId, raportSemIds }) {
+function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId, raportSemIds, br, bu, totalB }) {
   const PDFDocument = require('pdfkit')
-  const doc = new PDFDocument({ size: 'A4', margin: 0 })
+  // F4 = 215mm x 330mm → dalam pt
+  const F4 = [609.4, 935.4]
+  const doc = new PDFDocument({ size: F4, margin: 0 })
   const filePath = path.join(outputPath, 'Transkrip_Nilai_Semua.pdf')
   doc.pipe(fs.createWriteStream(filePath))
 
-  const pw = doc.page.width, ph = doc.page.height   // 595 x 842 pt
+  const pw = F4[0], ph = F4[1]
   const ml = 40, mr = 40, cw = pw - ml - mr
   const mb = 28   // margin bawah
 
@@ -1198,15 +1193,15 @@ function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilai
 
   function getAvgNilai(siswaId, mapelId) {
     const nils = nilaiData[siswaId] || []
-    const raps = nils.filter(n => raportSemIds.includes(n.semester_id) && n.nilai_p != null && n.nilai_k != null)
+    const raps = nils.filter(n => raportSemIds.includes(n.semester_id) && n.nilai_p != null && n.mapel_id === mapelId)
     const raport = raps.length
-      ? raps.reduce((a, r) => a + (parseFloat(r.nilai_p) + parseFloat(r.nilai_k)) / 2, 0) / raps.length
+      ? raps.reduce((a, r) => a + parseFloat(r.nilai_p), 0) / raps.length
       : null
-    const um = nils.find(n => n.semester_id === ujianSemId && n.nilai_ujian != null)
+    const um = nils.find(n => n.mapel_id === mapelId && n.semester_id === ujianSemId && n.nilai_ujian != null)
     if (raport == null && !um) return null
     if (raport == null) return parseFloat(um.nilai_ujian)
     if (!um) return raport
-    return (raport * 60 + parseFloat(um.nilai_ujian) * 40) / 100
+    return (raport * (br ?? 60) + parseFloat(um.nilai_ujian) * (bu ?? 40)) / (totalB ?? 100)
   }
 
   siswaList.forEach((siswa, idx) => {
@@ -1261,17 +1256,17 @@ function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilai
     // ════════════════════════════════════════════════════════════════════
     const tglSk = fmtTgl(s.tgl_lulus)
     const footnoteH = 28   // 2 baris footnote italic
-    const ttdH      = 110  // kota+kepala+ruangTTD+nama+NIP
+    const ttdH      = 145  // kota+kepala+ruangTTD+nama+NIP (3cm)
     const gapH      = 20   // gap antara tabel dan TTD
     const hdrH      = 22   // tinggi header tabel
 
     const availH = ph - mb - footnoteH - ttdH - gapH - y   // tinggi total untuk tabel
     const allMapel = mapelList
     // Jumlah baris = max(jumlah mapel, minimum 12), tapi pastikan muat di halaman
-    const minRows = 12
-    const totalRows = Math.max(allMapel.length, minRows)
-    // Tinggi setiap baris: isi sisa halaman
-    const rowH = Math.max(14, Math.floor((availH - hdrH) / totalRows))
+    const minRows = Math.max(allMapel.length, 10)
+    const totalRows = minRows
+    // Tinggi setiap baris: isi sisa halaman, max 36pt agar tidak terlalu jarang
+    const rowH = Math.min(15, Math.max(14, Math.floor((availH - hdrH) / totalRows)))
 
     // ════════════════════════════════════════════════════════════════════
     // TABEL NILAI
@@ -1343,17 +1338,19 @@ function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilai
       .text(`${s.kota || ''}, ${tglSk}`, ttdX, y + 3, { width: ttdW, align: 'center' })
     y += 14
     doc.text('Kepala,', ttdX, y, { width: ttdW, align: 'center' })
-    y += 46   // ruang TTD
+    y += 85   // 3cm ruang tanda tangan
 
-    // Garis solid nama
-    doc.moveTo(ttdX, y).lineTo(ttdX + ttdW, y).lineWidth(0.7).stroke('#000')
-    if (s.kepala) {
+    const namaKepalaTr = s.kepala ? s.kepala.toUpperCase() : ''
+    const garisWtr = Math.min(ttdW - 10, Math.max(80, namaKepalaTr.length * 5.8))
+    const garisXtr = ttdX + (ttdW - garisWtr) / 2
+    doc.moveTo(garisXtr, y).lineTo(garisXtr + garisWtr, y).lineWidth(0.7).stroke('#000')
+    if (namaKepalaTr) {
       doc.font('Helvetica-Bold').fontSize(9.5)
-        .text(s.kepala, ttdX, y - 13, { width: ttdW, align: 'center' })
+        .text(namaKepalaTr, ttdX, y - 15, { width: ttdW, align: 'center', underline: true })
     }
-    y += 4
+    y += 5
     doc.font('Helvetica').fontSize(9.5)
-      .text(`NIP ${s.nip || '...................................'}`, ttdX, y, { width: ttdW, align: 'center' })
+      .text(`NIP. ${s.nip || '...................................'}`, ttdX, y, { width: ttdW, align: 'center' })
     y += 30
 
     // ════════════════════════════════════════════════════════════════════
@@ -1493,16 +1490,17 @@ function generateSKKelulusan(outputPath, { sekolah: s, siswaList }) {
   const ttdX = pw / 2 + 10
   const ttdW = pw - mr - ttdX
   doc.font('Helvetica').fontSize(9.5).text('Kepala,', ttdX, y, { width: ttdW, align: 'center' })
-  y += 44
+  y += 85  // 3cm ruang tanda tangan
 
-  const garisW = 110
-  const garisX = ttdX + (ttdW - garisW) / 2
-  doc.moveTo(garisX, y).lineTo(garisX + garisW, y).lineWidth(0.7).stroke('#000')
-  if (s.kepala) {
+  const namaKepalaSk = s.kepala ? s.kepala.toUpperCase() : ''
+  const garisWsk = Math.min(ttdW - 10, Math.max(80, namaKepalaSk.length * 5.8))
+  const garisXsk = ttdX + (ttdW - garisWsk) / 2
+  doc.moveTo(garisXsk, y).lineTo(garisXsk + garisWsk, y).lineWidth(0.7).stroke('#000')
+  if (namaKepalaSk) {
     doc.font('Helvetica-Bold').fontSize(9.5)
-      .text(s.kepala, ttdX, y - 13, { width: ttdW, align: 'center' })
+      .text(namaKepalaSk, ttdX, y - 15, { width: ttdW, align: 'center', underline: true })
   }
-  y += 4
+  y += 5
   doc.font('Helvetica').fontSize(9)
     .text(`NIP. ${s.nip || ''}`, ttdX, y, { width: ttdW, align: 'center' })
 
@@ -1686,12 +1684,15 @@ function generateSKKB(outputPath, { sekolah: s, siswaList }) {
       .text(`${kotaStr}, ${tglStr}`, ttdX, y, { width: ttdW, align: 'center' })
     y += 12
     doc.text('Kepala Sekolah', ttdX, y, { width: ttdW, align: 'center' })
-    y += 52   // ruang TTD
+    y += 85  // 3cm ruang tanda tangan
 
-    // Nama kepala — bold, underline (sesuai referensi)
-    if (s.kepala) {
+    const namaKepalaSkkb = s.kepala ? s.kepala.toUpperCase() : ''
+    const garisWSkkb = Math.min(ttdW - 10, Math.max(80, namaKepalaSkkb.length * 5.8))
+    const garisXSkkb = ttdX + (ttdW - garisWSkkb) / 2
+    doc.moveTo(garisXSkkb, y).lineTo(garisXSkkb + garisWSkkb, y).lineWidth(0.7).stroke('#000')
+    if (namaKepalaSkkb) {
       doc.font('Helvetica-Bold').fontSize(10.5)
-        .text(s.kepala.toUpperCase(), ttdX, y, { width: ttdW, align: 'center', underline: true })
+        .text(namaKepalaSkkb, ttdX, y - 15, { width: ttdW, align: 'center', underline: true })
       y += 13
     }
     if (s.nip) {
