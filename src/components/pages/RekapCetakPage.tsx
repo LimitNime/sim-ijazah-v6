@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { FileSpreadsheet, FileText, Printer, RefreshCw, CheckCircle, XCircle, Download, Loader2, ChevronDown } from 'lucide-react'
-import { Button, PageHeader, StatCard, Table, Badge } from '../ui'
+import { Button, PageHeader, StatCard, Table, Badge , InfoTooltip } from '../ui'
 import { nilaiApi, sekolahApi, appApi, pdfApi, angkatanApi, dbApi, exportApi } from '../../lib/api'
 import type { Sekolah, Angkatan, RekapRow } from '../../types'
 
@@ -106,10 +106,10 @@ export function RekapCetakPage({ showToast }: { showToast: (msg: string, type?: 
       render:(r:RekapRow) => <span className="font-mono text-xs text-gray-500">{r.nisn||'-'}</span> },
     { key:'jml_nilai', header:'Data Nilai', width:'100px', align:'center' as const,
       render:(r:RekapRow) => <span className="text-sm text-gray-600">{r.jml_nilai}</span> },
-    { key:'nilai_ijazah', header:'Nilai Ijazah', width:'130px', align:'center' as const,
+    { key:'nilai_ijazah', header:'Nilai Ijazah', width:'140px', align:'center' as const,
       render:(r:RekapRow) => r.nilai_ijazah != null
         ? <span className="font-bold text-blue-700 text-base">{r.nilai_ijazah.toFixed(2)}</span>
-        : <span className="text-gray-300">—</span> },
+        : <span className="text-gray-300 text-xs">Nilai belum lengkap</span> },
     { key:'lengkap', header:'Status', width:'150px', align:'center' as const,
       render:(r:RekapRow) => r.lengkap
         ? <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
@@ -119,14 +119,14 @@ export function RekapCetakPage({ showToast }: { showToast: (msg: string, type?: 
   ]
 
   // Dokumen yang bisa dipilih angkatan
-  const PDF_BTNS: { type: 'skl'|'dkn'|'nilaiIjazah'|'ijazah'|'transkrip'|'sk_kelulusan'|'skkb'; label: string }[] = [
-    { type: 'skl',          label: 'Cetak SKL' },
-    { type: 'dkn',          label: 'Cetak DKN' },
-    { type: 'nilaiIjazah',  label: 'Cetak Nilai Ijazah' },
-    { type: 'ijazah',       label: 'Cetak Ijazah' },
-    { type: 'transkrip',    label: 'Cetak Transkrip Nilai' },
-    { type: 'sk_kelulusan', label: 'Cetak SK Kelulusan' },
-    { type: 'skkb',         label: 'Cetak SKKB' },
+  const PDF_BTNS: { type: 'skl'|'dkn'|'nilaiIjazah'|'ijazah'|'transkrip'|'sk_kelulusan'|'skkb'; label: string; info: string }[] = [
+    { type: 'skl',          label: 'Cetak SKL',           info: 'Surat Keterangan Lulus per siswa (A4). Nomor SKL dari data masing-masing siswa.' },
+    { type: 'dkn',          label: 'Cetak DKN',           info: 'Daftar Kumpulan Nilai semua siswa (F4 landscape). Berisi nilai per mapel dan rata-rata Nilai Ijazah.' },
+    { type: 'nilaiIjazah',  label: 'Cetak Nilai Ijazah',  info: 'Lampiran nilai ijazah per siswa (A4). Berisi 4 kolom: Mapel, Rata Rapor, Nilai US, Nilai Ijazah.' },
+    { type: 'ijazah',       label: 'Cetak Ijazah',        info: 'Halaman isian ijazah resmi. Gunakan blanko asli dari Kemendikbud/Kemenag sebagai kertas cetak.' },
+    { type: 'transkrip',    label: 'Cetak Transkrip Nilai', info: 'Transkrip Nilai resmi per siswa (F4 portrait). Berisi biodata, tabel nilai akhir per mapel, dan TTD kepala sekolah.' },
+    { type: 'sk_kelulusan', label: 'Cetak SK Kelulusan',  info: 'Surat Keputusan Kelulusan resmi (F4). Berisi halaman SK + lampiran daftar siswa lulus.' },
+    { type: 'skkb',         label: 'Cetak SKKB',          info: 'Surat Keterangan Kelakuan Baik per siswa (A4). Nomor dari data siswa atau nomor default sekolah.' },
   ]
 
   function getAngkatanLabel(type: string) {
@@ -144,14 +144,14 @@ export function RekapCetakPage({ showToast }: { showToast: (msg: string, type?: 
       <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
         <div className="flex-1">
           <p className="text-sm font-semibold text-amber-800">🗄️ Backup & Restore Database</p>
-          <p className="text-xs text-amber-600">Backup rutin untuk keamanan data siswa dan nilai</p>
+          <p className="text-xs text-amber-600">Backup menyimpan file <strong>.zip</strong> berisi database + export JSON. Restore bisa dari file .zip atau .db</p>
         </div>
         <button onClick={async () => {
           const r = await dbApi.backup() as any
           if (r?.ok) alert('✅ Backup berhasil disimpan di:\n' + r.path)
           else if (r?.message !== 'Dibatalkan') alert('❌ Gagal backup: ' + r?.message)
         }} className="px-4 py-2 text-sm font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
-          💾 Backup
+          💾 Backup (.zip)
         </button>
         <button onClick={async () => {
           if (!confirm('⚠️ Restore akan MENGGANTI semua data saat ini dengan data dari file backup.\n\nYakin lanjutkan?')) return
@@ -204,6 +204,7 @@ export function RekapCetakPage({ showToast }: { showToast: (msg: string, type?: 
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin"/>
                     : <Printer className="w-3.5 h-3.5"/>}
                   <span>{isPrinting ? 'Mencetak...' : `${label} (PDF)`}</span>
+                  {!isPrinting && <InfoTooltip text={type && PDF_BTNS.find(b=>b.type===type)?.info || ''} position="bottom" />}
                 </button>
 
                 {/* Dropdown pilih angkatan */}
