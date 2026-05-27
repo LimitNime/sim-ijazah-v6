@@ -314,14 +314,14 @@ export function SiswaPage({ showToast }: { showToast: (msg: string, type?: any) 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
               <p className="font-semibold mb-1">ℹ️ Nomor-nomor berikut akan muncul otomatis di dokumen yang sesuai</p>
-              <p>NISN → semua dokumen &nbsp;·&nbsp; NISM → SKL, Transkrip &nbsp;·&nbsp; Blanko → Ijazah &nbsp;·&nbsp; No Peserta → SKL &nbsp;·&nbsp; No SKL → SKL &nbsp;·&nbsp; No SKKB → SKKB</p>
+              <p>NISN → semua dokumen &nbsp;·&nbsp; NISM → SKL, Transkrip &nbsp;·&nbsp; Blanko Ijazah → Ijazah &amp; Transkrip &nbsp;·&nbsp; No Peserta → SKL</p>
             </div>
-            <Input label={<span className="flex items-center gap-1">NISN <InfoTooltip text="Nomor Induk Siswa Nasional — dipakai sebagai kunci pencocokan saat import nilai dari Excel." /></span>}  value={modal.form.nisn||''} onChange={e => set('nisn',e.target.value)} placeholder="Nomor Induk Siswa Nasional (10 digit)"/>
-            <Input label={<span className="flex items-center gap-1">NISM <InfoTooltip text="Nomor Induk Siswa Madrasah — muncul di dokumen Transkrip Nilai dan SKL." /></span>}  value={modal.form.nism||''} onChange={e => set('nism',e.target.value)} placeholder="Nomor Induk Siswa Madrasah"/>
+            <Input label={<span className="flex items-center gap-1">NISN <InfoTooltip text="Wajib diisi — dipakai sebagai kunci pencocokan saat import nilai dari Excel." position="bottom" /></span>}  value={modal.form.nisn||''} onChange={e => set('nisn',e.target.value)} placeholder="Nomor Induk Siswa Nasional (10 digit)"/>
+            <Input label={<span className="flex items-center gap-1">NISM <InfoTooltip text="Muncul di biodata dokumen Transkrip Nilai dan SKL." position="bottom" /></span>}  value={modal.form.nism||''} onChange={e => set('nism',e.target.value)} placeholder="Nomor Induk Siswa Madrasah"/>
             <Input label="No Peserta Ujian Sekolah" value={modal.form.no_peserta||''} onChange={e => set('no_peserta',e.target.value)} placeholder="No peserta ujian sekolah (di SKL)"/>
-            <Input label="No Peserta AM / Ujian Nasional" value={modal.form.peserta_am||''} onChange={e => set('peserta_am',e.target.value)} placeholder="No peserta AM"/>
-            <Input label="No Blanko Ijazah" value={modal.form.blanko||''} onChange={e => set('blanko',e.target.value)} placeholder="No blanko (di Ijazah)"/>
-            <Input label="No SKKB Individual" value={modal.form.no_skkb||''} onChange={e => set('no_skkb',e.target.value)} placeholder="Nomor SKKB siswa ini"/>
+
+            <Input label="No Blanko Ijazah" value={modal.form.blanko||''} onChange={e => set('blanko',e.target.value)} placeholder="No seri blanko dari Kemendikbud — muncul di Ijazah & Transkrip"/>
+
             <div className="col-span-2">
               <Input label="Jenis Kekhususan" value={modal.form.jenis_kekhususan||''} onChange={e => set('jenis_kekhususan',e.target.value)} placeholder="Kosongkan jika tidak ada kekhususan"/>
             </div>
@@ -338,7 +338,7 @@ export function SiswaPage({ showToast }: { showToast: (msg: string, type?: any) 
                 <p className="text-sm font-semibold text-gray-700">Nomor SKL</p>
                 <span className="text-xs text-gray-400">(bisa diisi manual atau gunakan Generate No SKL)</span>
               </div>
-              <Input label="No SKL" value={modal.form.no_skl||''} onChange={e => set('no_skl',e.target.value)} placeholder="Contoh: 421.2/001/MI.CONTOH/V/2025"/>
+
             </div>
             {/* Foto */}
             <div className="border border-gray-200 rounded-xl p-4">
