@@ -124,7 +124,7 @@ function drawKopResmi(doc, s, ml, cw) {
 // ══════════════════════════════════════════════════════════════════════════
 function generateSKL(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId }) {
   const PDFDocument = require('pdfkit')
-  const F4skl = [609.4, 935.4]
+  const F4skl = [595.28, 841.89]
   const doc = new PDFDocument({ size: F4skl, margin: 0 })
   const filePath = path.join(outputPath, 'SKL_Kelulusan.pdf')
   doc.pipe(fs.createWriteStream(filePath))
@@ -346,7 +346,7 @@ function generateSKL(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, 
 
 function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId, raportSemIds, br, bu, totalB }) {
   const PDFDocument = require('pdfkit')
-  const F4ni = [609.4, 935.4]
+  const F4ni = [595.28, 841.89]
   const doc = new PDFDocument({ size: F4ni, margin: 0 })
   const filePath = path.join(outputPath, 'Nilai_Ijazah_Semua.pdf')
   doc.pipe(fs.createWriteStream(filePath))
@@ -534,7 +534,7 @@ function generateNilaiIjazah(outputPath, { sekolah: s, siswaList, mapelList, nil
 function generateDKN(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId, raportSemIds, br, bu, totalB }) {
   const PDFDocument = require('pdfkit')
   // F4 landscape = 330mm x 215mm → dalam pt
-  const F4L = [935.4, 609.4]
+  const F4L = [841.89, 595.28]
   const doc = new PDFDocument({ size: F4L, margin: 0 })
   const filePath = path.join(outputPath, 'DKN_Lengkap.pdf')
   doc.pipe(fs.createWriteStream(filePath))
@@ -898,11 +898,7 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
   siswaList.forEach((siswa, idx) => {
     if (idx > 0) doc.addPage()
 
-    // ════════════════════════════════════════════════════════════════════
-    // BORDER GANDA
-    // ════════════════════════════════════════════════════════════════════
-    doc.rect(6,  6,  pw-12, ph-12).lineWidth(2.5).stroke('#000')
-    doc.rect(10, 10, pw-20, ph-20).lineWidth(0.6).stroke('#000')
+    // Border dihilangkan sesuai permintaan
 
     // ════════════════════════════════════════════════════════════════════
     // No. Ijazah — pojok kanan atas
@@ -975,8 +971,6 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
       const namaSekolah = s.nama.toUpperCase()
       doc.font('Helvetica-Bold').fontSize(10).fillColor('#000')
         .text(namaSekolah, ml, y, { width: cw, align: 'center' })
-      y += 12
-      underText(namaSekolah, 0, y, { bold:true, size:10, center:true, cx: ml + cw/2, pad:16 })
     }
     y += 10
 
@@ -1016,8 +1010,6 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
       const namaSiswa = siswa.nama.toUpperCase()
       doc.font('Helvetica-Bold').fontSize(12).fillColor('#000')
         .text(namaSiswa, ml, y, { width: cw, align: 'center' })
-      y += 13
-      underText(namaSiswa, 0, y, { bold:true, size:12, center:true, cx: ml + cw/2, pad:20 })
     }
     y += 14
 
@@ -1038,10 +1030,6 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
       if (value) {
         doc.font('Helvetica').fontSize(10)
           .text(value, valX + 2, y, { width: valW - 4, lineBreak: false })
-        // Garis hanya sepanjang teks
-        const gW = Math.min(doc.widthOfString(value, { font:'Helvetica', fontSize:10 }) + 10, valW)
-        doc.save().lineWidth(0.4).stroke('#000')
-          .moveTo(valX, y + 12).lineTo(valX + gW, y + 12).stroke().restore()
       }
       y += 18
     }
@@ -1156,7 +1144,7 @@ function generateIjazah(outputPath, { sekolah: s, siswaList }) {
 function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilaiData, ujianSemId, raportSemIds, br, bu, totalB }) {
   const PDFDocument = require('pdfkit')
   // F4 = 215mm x 330mm → dalam pt
-  const F4 = [609.4, 935.4]
+  const F4 = [595.28, 841.89]
   const doc = new PDFDocument({ size: F4, margin: 0 })
   const filePath = path.join(outputPath, 'Transkrip_Nilai_Semua.pdf')
   doc.pipe(fs.createWriteStream(filePath))
@@ -1351,7 +1339,7 @@ function generateTranskrip(outputPath, { sekolah: s, siswaList, mapelList, nilai
 
 function generateSKKelulusan(outputPath, { sekolah: s, siswaList }) {
   const PDFDocument = require('pdfkit')
-  const F4sk = [609.4, 935.4]
+  const F4sk = [595.28, 841.89]
   const doc = new PDFDocument({ size: F4sk, margin: 0 })
   const filePath = path.join(outputPath, 'SK_Penetapan_Kelulusan.pdf')
   doc.pipe(fs.createWriteStream(filePath))
@@ -1557,7 +1545,7 @@ function generateSKKelulusan(outputPath, { sekolah: s, siswaList }) {
 function generateSKKB(outputPath, { sekolah: s, siswaList }) {
   const PDFDocument = require('pdfkit')
   // F4 = 215mm x 330mm → dalam pt (1mm = 2.8346pt)
-  const F4 = [609.4, 935.4]
+  const F4 = [595.28, 841.89]
   const doc = new PDFDocument({ size: F4, margin: 0 })
   const filePath = path.join(outputPath, 'SKKB_Semua.pdf')
   doc.pipe(fs.createWriteStream(filePath))
