@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Users, CheckCircle, XCircle, Upload, Hash, RefreshCw, FileText, Camera, X, Download } from 'lucide-react'
-import { Button, SearchBar, Modal, Input, Select, ConfirmDialog, Badge, PageHeader, StatCard, Table, EmptyState } from '../ui'
+import { Button, SearchBar, Modal, Input, Select, ConfirmDialog, Badge, PageHeader, StatCard, Table, EmptyState , InfoTooltip } from '../ui'
 import { siswaApi, sekolahApi } from '../../lib/api'
 import type { Siswa } from '../../types'
 
@@ -316,8 +316,8 @@ export function SiswaPage({ showToast }: { showToast: (msg: string, type?: any) 
               <p className="font-semibold mb-1">ℹ️ Nomor-nomor berikut akan muncul otomatis di dokumen yang sesuai</p>
               <p>NISN → semua dokumen &nbsp;·&nbsp; NISM → SKL, Transkrip &nbsp;·&nbsp; Blanko → Ijazah &nbsp;·&nbsp; No Peserta → SKL &nbsp;·&nbsp; No SKL → SKL &nbsp;·&nbsp; No SKKB → SKKB</p>
             </div>
-            <Input label="NISN" value={modal.form.nisn||''} onChange={e => set('nisn',e.target.value)} placeholder="Nomor Induk Siswa Nasional (10 digit)"/>
-            <Input label="NISM" value={modal.form.nism||''} onChange={e => set('nism',e.target.value)} placeholder="Nomor Induk Siswa Madrasah"/>
+            <Input label={<span className="flex items-center gap-1">NISN <InfoTooltip text="Nomor Induk Siswa Nasional — dipakai sebagai kunci pencocokan saat import nilai dari Excel." /></span>}  value={modal.form.nisn||''} onChange={e => set('nisn',e.target.value)} placeholder="Nomor Induk Siswa Nasional (10 digit)"/>
+            <Input label={<span className="flex items-center gap-1">NISM <InfoTooltip text="Nomor Induk Siswa Madrasah — muncul di dokumen Transkrip Nilai dan SKL." /></span>}  value={modal.form.nism||''} onChange={e => set('nism',e.target.value)} placeholder="Nomor Induk Siswa Madrasah"/>
             <Input label="No Peserta Ujian Sekolah" value={modal.form.no_peserta||''} onChange={e => set('no_peserta',e.target.value)} placeholder="No peserta ujian sekolah (di SKL)"/>
             <Input label="No Peserta AM / Ujian Nasional" value={modal.form.peserta_am||''} onChange={e => set('peserta_am',e.target.value)} placeholder="No peserta AM"/>
             <Input label="No Blanko Ijazah" value={modal.form.blanko||''} onChange={e => set('blanko',e.target.value)} placeholder="No blanko (di Ijazah)"/>
