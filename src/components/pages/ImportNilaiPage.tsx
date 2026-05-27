@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Download, Upload, CheckCircle, XCircle, AlertCircle, FileSpreadsheet, Info } from 'lucide-react'
-import { Button, PageHeader } from '../ui'
+import { Button, PageHeader , InfoTooltip } from '../ui'
 import { nilaiApi } from '../../lib/api'
 
 interface PreviewRow {
