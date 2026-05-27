@@ -82,7 +82,6 @@ function initDB() {
       no_transkrip TEXT
     );
     INSERT OR IGNORE INTO nomor_surat(id) VALUES(1);
-    try { db.prepare('ALTER TABLE nomor_surat ADD COLUMN no_transkrip TEXT').run() } catch(e) {}
 
     CREATE TABLE IF NOT EXISTS angkatan (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,6 +93,9 @@ function initDB() {
       UNIQUE(angkatan_id, siswa_id)
     );
   `)
+
+  // Migrasi kolom lama jika belum ada
+  try { db.prepare('ALTER TABLE nomor_surat ADD COLUMN no_transkrip TEXT').run() } catch(e) {}
 
   const crypto = require('crypto')
   const hash = pw => crypto.createHash('sha256').update(pw).digest('hex')
