@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Save, RefreshCw, Hash, FileText, Info, AlertCircle } from 'lucide-react'
-import { Button, PageHeader, Input } from '../ui'
+import { Button, PageHeader, Input , InfoTooltip } from '../ui'
 import { nomorSuratApi } from '../../lib/api'
 
 // Jenis surat yang punya nomor per-dokumen (bukan per siswa)
