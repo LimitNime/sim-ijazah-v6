@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, Calendar, AlertTriangle } from 'lucide-react'
-import { Button, Modal, Input, Select, ConfirmDialog, PageHeader, SectionCard, Table, Badge } from '../ui'
+import { Button, Modal, Input, Select, ConfirmDialog, PageHeader, SectionCard, Table, Badge , InfoTooltip } from '../ui'
 import { semesterApi } from '../../lib/api'
 import type { Semester } from '../../types'
 
@@ -129,7 +129,7 @@ export function SemesterPage({ showToast }: { showToast: (msg: string, type?: an
           <Input label="Label Semester *" value={modal.form.label || ''} onChange={e => set('label', e.target.value)}
             placeholder="Contoh: Semester 1 (Ganjil)" />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Urutan" type="number" value={modal.form.urutan || 1} onChange={e => set('urutan', Number(e.target.value))} />
+            <Input label={<span className="flex items-center gap-1">Urutan <InfoTooltip text="Urutan tampil semester di tabel dan template Excel. Semester ujian biasanya diurutkan paling akhir." /></span>}  type="number" value={modal.form.urutan || 1} onChange={e => set('urutan', Number(e.target.value))} />
             <Select label="Jenis" value={String(modal.form.is_ujian ?? 0)} onChange={e => set('is_ujian', Number(e.target.value))} options={JENIS_OPT} />
           </div>
         </div>
