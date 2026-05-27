@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Save, ChevronLeft, ChevronRight, PenLine, CheckCircle, AlertCircle, Info } from 'lucide-react'
-import { Button, SearchBar, PageHeader, StatCard, Spinner } from '../ui'
+import { Button, SearchBar, PageHeader, StatCard, Spinner , InfoTooltip } from '../ui'
 import { siswaApi, mapelApi, semesterApi, nilaiApi, sekolahApi } from '../../lib/api'
 import type { Siswa, Mapel, Semester, Nilai } from '../../types'
 
@@ -320,13 +320,13 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
                           <th className="px-2 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide w-28 text-center">Kel.</th>
                           {isUjian(selSem) ? (
                             <>
-                              <th className="px-3 py-3 text-xs font-bold text-amber-600 uppercase tracking-wide w-32 text-center">Nilai US</th>
-                              <th className="px-3 py-3 text-xs font-bold text-purple-600 uppercase tracking-wide w-32 text-center">Nilai Ijazah</th>
+                              <th className="px-3 py-3 text-xs font-bold text-amber-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai US <InfoTooltip text="Nilai Ujian Sekolah — dipakai bersama rata-rata rapor untuk menghitung Nilai Ijazah akhir." /></span></th>
+                              <th className="px-3 py-3 text-xs font-bold text-purple-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai Ijazah <InfoTooltip text="Hasil akhir: (Rata Rapor × bobot%) + (Nilai US × bobot%). Dipakai di dokumen Nilai Ijazah dan Transkrip." /></span></th>
                             </>
                           ) : (
                             <>
-                              <th className="px-3 py-3 text-xs font-bold text-blue-600 uppercase tracking-wide w-32 text-center">Nilai Pengetahuan</th>
-                              <th className="px-3 py-3 text-xs font-bold text-purple-600 uppercase tracking-wide w-32 text-center">Nilai Ijazah</th>
+                              <th className="px-3 py-3 text-xs font-bold text-blue-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai Pengetahuan <InfoTooltip text="Nilai pengetahuan (P) per semester rapor. Rata-ratanya dihitung sebagai Nilai Rapor Ijazah." /></span></th>
+                              <th className="px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide w-32 text-center">Rata Raport</th>
                             </>
                           )}
                           <th className="px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide w-24 text-center">Status</th>
