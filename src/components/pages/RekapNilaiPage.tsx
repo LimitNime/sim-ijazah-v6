@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Eye, PenLine, Download, RefreshCw, CheckCircle, XCircle, ChevronDown, ChevronUp, FileText, Users } from 'lucide-react'
-import { Button, SearchBar, PageHeader, StatCard, Spinner } from '../ui'
+import { Button, SearchBar, PageHeader, StatCard, Spinner , InfoTooltip } from '../ui'
 import { nilaiApi, mapelApi, semesterApi, angkatanApi, exportApi, pdfApi } from '../../lib/api'
 import type { Mapel, Semester, Angkatan, RekapRow } from '../../types'
 
@@ -188,8 +188,8 @@ export function RekapNilaiPage({ showToast, onNavigate }: {
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama Siswa</th>
                   <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-32">NISN</th>
                   <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-24">Nilai Terisi</th>
-                  <th className="px-3 py-3 text-center text-xs font-bold text-blue-600 uppercase w-28">Nilai Ijazah</th>
-                  <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-24">Status</th>
+                  <th className="px-3 py-3 text-center text-xs font-bold text-blue-600 uppercase w-28"><span className="flex items-center justify-center gap-1">Nilai Ijazah <InfoTooltip text="Hasil akhir: (Rata Rapor × bobot%) + (Nilai US × bobot%). Ini yang tercantum di dokumen resmi." /></span></th>
+                  <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-24"><span className="flex items-center justify-center gap-1">Status <InfoTooltip text="Lengkap = semua nilai rapor dan nilai ujian sudah terisi dan siap cetak dokumen." /></span></th>
                   <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-44">Aksi</th>
                 </tr>
               </thead>
@@ -256,9 +256,9 @@ export function RekapNilaiPage({ showToast, onNavigate }: {
                                       {s.label.replace('Semester ','S').replace(' (Ganjil)','').replace(' (Genap)','')}
                                     </th>
                                   ))}
-                                  <th className="px-2 py-2 text-center font-bold text-blue-700 w-20">Rata Raport</th>
+                                  <th className="px-2 py-2 text-center font-bold text-blue-700 w-20"><span className="flex items-center justify-center gap-1">Rata Raport <InfoTooltip text="Rata-rata nilai pengetahuan (P) dari semua semester rapor." /></span></th>
                                   {ujianSem && <th className="px-2 py-2 text-center font-semibold text-amber-600 w-20">Nilai US</th>}
-                                  <th className="px-2 py-2 text-center font-bold text-purple-600 w-20">Nilai Ijazah</th>
+                                  <th className="px-2 py-2 text-center font-bold text-purple-600 w-20"><span className="flex items-center justify-center gap-1">Nilai Ijazah <InfoTooltip text="Hasil akhir: (Rata Rapor × bobot%) + (Nilai US × bobot%). Ini yang tercantum di dokumen resmi." /></span></th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-50">
