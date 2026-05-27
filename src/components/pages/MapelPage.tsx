@@ -134,12 +134,12 @@ export function MapelPage({ showToast }: { showToast: (msg: string, type?: any) 
         <div className="flex-1 min-w-48"><SearchBar value={q} onChange={setQ} placeholder="Cari mata pelajaran..." /></div>
         <Button variant="secondary" icon={<ArrowUp className="w-4 h-4"/>} onClick={() => move(-1)} disabled={!selected}>Naik</Button>
         <Button variant="secondary" icon={<ArrowDown className="w-4 h-4"/>} onClick={() => move(1)} disabled={!selected}>Turun</Button>
-        <Button variant="secondary" onClick={seedDefault}>+ Default MI/SD</Button>
+        <Button variant="secondary" onClick={seedDefault} title="Isi otomatis mapel standar MI/SD (Al-Qur'an Hadis, Akidah Akhlak, Fikih, dll)">+ Default Mapel</Button>
       </div>
 
       <Table columns={columns} data={filtered} keyFn={r => r.id} loading={loading}
         selectedKey={selected} onRowClick={r => setSelected(r.id === selected ? null : r.id)}
-        emptyText="Belum ada mata pelajaran. Klik Tambah atau gunakan Default MI/SD." />
+        emptyText="Belum ada mata pelajaran. Klik Tambah atau gunakan Default Mapel." />
 
       {/* Modal */}
       <Modal open={modal.open} onClose={() => setModal(m => ({ ...m, open: false }))}
