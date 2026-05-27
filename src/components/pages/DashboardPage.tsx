@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Users, BookOpen, PenLine, GraduationCap, Folder } from 'lucide-react'
-import { StatCard, SectionCard } from '../ui'
+import { StatCard, SectionCard , InfoTooltip } from '../ui'
 import { appApi, sekolahApi } from '../../lib/api'
 import type { Sekolah } from '../../types'
 import type { PageKey } from '../layout/Sidebar'
@@ -47,7 +47,7 @@ export function DashboardPage({ onNavigate }: Props) {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Total Siswa"      value={stats.siswa}    icon={<Users className="w-5 h-5" />}       color="text-blue-600" />
+        <StatCard label="Total Siswa" sub={<InfoTooltip text="Jumlah siswa yang terdaftar di semua angkatan." />}      value={stats.siswa}    icon={<Users className="w-5 h-5" />}       color="text-blue-600" />
         <StatCard label="Mata Pelajaran"   value={stats.mapel}    icon={<BookOpen className="w-5 h-5" />}    color="text-emerald-600" />
         <StatCard label="Data Nilai"       value={stats.nilai}    icon={<PenLine className="w-5 h-5" />}     color="text-purple-600" />
         <StatCard label="Angkatan"         value={stats.angkatan} icon={<GraduationCap className="w-5 h-5"/>} color="text-amber-600" />
