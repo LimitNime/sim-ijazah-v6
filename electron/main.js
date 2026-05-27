@@ -661,7 +661,11 @@ function registerIPC() {
       const raportSems = semList.filter(s => !s.is_ujian)
       const ujianSems  = semList.filter(s => s.is_ujian)
       const siswaMap  = {}
-      db.prepare('SELECT id,nisn,nama FROM siswa').all().forEach(s => { if (s.nisn) siswaMap[String(s.nisn).trim()] = s.id })
+      const siswaMapNama = {}
+      db.prepare('SELECT id,nisn,nama FROM siswa').all().forEach(s => {
+        if (s.nisn) siswaMap[String(s.nisn).trim()] = s.id
+        if (s.nama) siswaMapNama[String(s.nama).trim().toLowerCase()] = s.id
+      })
 
       const ins = db.prepare('INSERT INTO nilai(siswa_id,mapel_id,semester_id,nilai_p,nilai_k,nilai_ujian) VALUES(?,?,?,?,?,?) ON CONFLICT(siswa_id,mapel_id,semester_id) DO UPDATE SET nilai_p=excluded.nilai_p,nilai_k=excluded.nilai_k,nilai_ujian=excluded.nilai_ujian')
       let imported = 0, skipped = 0, errors = 0
@@ -671,8 +675,16 @@ function registerIPC() {
       const tx = db.transaction(() => {
         rows.forEach(row => {
           const nisn    = String(row['NISN']||'').trim()
+          const namaSiswa = String(row['Nama Siswa']||'').trim()
           const mapelId = parseInt(row['Kode Mapel'])
-          const siswaId = siswaMap[nisn]
+          let siswaId = siswaMap[nisn] || siswaMapNama[namaSiswa.toLowerCase()]
+          // Jika siswa belum ada di DB, tambahkan otomatis
+          if (!siswaId && nisn && namaSiswa) {
+            const inserted = db.prepare('INSERT INTO siswa(nisn,nama) VALUES(?,?)').run(nisn, namaSiswa)
+            siswaId = inserted.lastInsertRowid
+            siswaMap[nisn] = siswaId
+            siswaMapNama[namaSiswa.toLowerCase()] = siswaId
+          }
           if (!siswaId || !mapelId) { skipped++; return }
 
           raportSems.forEach(sem => {
@@ -747,7 +759,43 @@ function registerIPC() {
         nilaiData.push(row)
       })
       const ws2 = XLSX.utils.aoa_to_sheet(nilaiData)
-      ws2['!cols'] = nilaiHeader.map((_,i) => ({ wch: i<2?28:i===2?6:10 }))
+      ws2['!cols'] = nilaiHeader.map((_,i) => ({ wch: i===0?5:i===1?32:i===2?6:12 }))
+      // Style header baris pertama
+      const headerRange = XLSX.utils.decode_range(ws2['!ref'])
+      for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c: C })
+        if (!ws2[addr]) continue
+        ws2[addr].s = {
+          font:      { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+          fill:      { fgColor: { rgb: '1E3A5F' } },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border: {
+            top:    { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left:   { style: 'thin', color: { rgb: '000000' } },
+            right:  { style: 'thin', color: { rgb: '000000' } },
+          }
+        }
+      }
+      // Style baris data — alternating color
+      for (let R = 1; R <= headerRange.e.r; R++) {
+        const bg = R % 2 === 0 ? 'EBF3FB' : 'FFFFFF'
+        for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: C })
+          if (!ws2[addr]) ws2[addr] = { v: '', t: 's' }
+          ws2[addr].s = {
+            fill:      { fgColor: { rgb: bg } },
+            alignment: { horizontal: C <= 1 ? 'left' : 'center', vertical: 'center' },
+            border: {
+              top:    { style: 'thin', color: { rgb: 'CCCCCC' } },
+              bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
+              left:   { style: 'thin', color: { rgb: 'CCCCCC' } },
+              right:  { style: 'thin', color: { rgb: 'CCCCCC' } },
+            }
+          }
+        }
+      }
+      ws2['!rows'] = [{ hpt: 22 }]  // tinggi header
 
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, biodataSheet, 'Biodata')
@@ -780,41 +828,83 @@ function registerIPC() {
     return db.prepare('SELECT * FROM nomor_surat WHERE id=1').get() || {}
   })
   ipcMain.handle('nomor_surat:save', (_, field, value) => {
-    const allowed = ['no_sk','no_sk_dkn','no_skkb','no_nilai_ijazah']
+    const allowed = ['no_sk','no_skkb','no_nilai_ijazah']
     if (!allowed.includes(field)) return { ok: false, message: 'Field tidak valid' }
     db.prepare(`UPDATE nomor_surat SET ${field}=? WHERE id=1`).run(value)
     return { ok: true }
   })
   ipcMain.handle('nomor_surat:save_all', (_, data) => {
-    db.prepare('UPDATE nomor_surat SET no_sk=?,no_sk_dkn=?,no_skkb=?,no_nilai_ijazah=? WHERE id=1')
-      .run(data.no_sk||null, data.no_sk_dkn||null, data.no_skkb||null, data.no_nilai_ijazah||null)
+    db.prepare('UPDATE nomor_surat SET no_sk=?,no_skkb=?,no_nilai_ijazah=? WHERE id=1')
+      .run(data.no_sk||null, data.no_skkb||null, data.no_nilai_ijazah||null)
     return { ok: true }
   })
 
   ipcMain.handle('db:backup', async () => {
-    const now    = new Date()
-    const stamp  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`
+    const now   = new Date()
+    const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`
     const result = await dialog.showSaveDialog({
-      title: 'Simpan Backup Database',
-      defaultPath: `SIM_Ijazah_Backup_${stamp}.db`,
-      filters: [{ name: 'Database', extensions: ['db'] }]
+      title: 'Simpan Backup (ZIP)',
+      defaultPath: `SIM_Ijazah_Backup_${stamp}.zip`,
+      filters: [{ name: 'File ZIP', extensions: ['zip'] }]
     })
     if (result.canceled || !result.filePath) return { ok: false, message: 'Dibatalkan' }
     try {
-      await db.backup(result.filePath)
+      const AdmZip = require('adm-zip')
+      const tmpDb  = path.join(app.getPath('temp'), `sim_backup_${stamp}.db`)
+      await db.backup(tmpDb)
+      // Export data ke JSON
+      const exportData = {
+        exported_at: new Date().toISOString(),
+        sekolah:     db.prepare('SELECT * FROM sekolah').all(),
+        siswa:       db.prepare('SELECT * FROM siswa').all(),
+        mapel:       db.prepare('SELECT * FROM mapel ORDER BY urutan').all(),
+        semester:    db.prepare('SELECT * FROM semester_config ORDER BY urutan').all(),
+        nilai:       db.prepare('SELECT * FROM nilai').all(),
+        angkatan:    db.prepare('SELECT * FROM angkatan').all(),
+        nomor_surat: db.prepare('SELECT * FROM nomor_surat').all(),
+      }
+      const zip = new AdmZip()
+      zip.addLocalFile(tmpDb, '', 'SIM_Ijazah.db')
+      zip.addFile('data_export.json', Buffer.from(JSON.stringify(exportData, null, 2), 'utf8'))
+      zip.addFile('CARA_RESTORE.txt', Buffer.from(
+        'Cara Restore Backup SIM Ijazah:\n' +
+        '1. Buka aplikasi SIM Ijazah\n' +
+        '2. Klik tombol Restore di menu Rekap & Cetak\n' +
+        '3. Pilih file ZIP ini\n' +
+        '4. Aplikasi akan otomatis merestore data\n\n' +
+        'File SIM_Ijazah.db adalah database utama.\n' +
+        'File data_export.json adalah export JSON untuk keperluan lain.\n',
+        'utf8'
+      ))
+      zip.writeZip(result.filePath)
+      fs.unlinkSync(tmpDb)
       return { ok: true, path: result.filePath }
     } catch (e) { return { ok: false, message: e.message } }
   })
 
   ipcMain.handle('db:restore', async () => {
     const result = await dialog.showOpenDialog({
-      title: 'Pilih File Backup Database',
-      filters: [{ name: 'Database', extensions: ['db'] }],
+      title: 'Pilih File Backup (ZIP atau DB)',
+      filters: [
+        { name: 'Backup SIM Ijazah', extensions: ['zip','db'] },
+        { name: 'File ZIP', extensions: ['zip'] },
+        { name: 'Database', extensions: ['db'] },
+      ],
       properties: ['openFile']
     })
     if (result.canceled || !result.filePaths.length) return { ok: false, message: 'Dibatalkan' }
     try {
-      const backupPath = result.filePaths[0]
+      let backupPath = result.filePaths[0]
+      // Jika ZIP, extract file .db terlebih dahulu
+      if (backupPath.endsWith('.zip')) {
+        const AdmZip = require('adm-zip')
+        const zip = new AdmZip(backupPath)
+        const dbEntry = zip.getEntries().find(e => e.entryName.endsWith('.db'))
+        if (!dbEntry) return { ok: false, message: 'File ZIP tidak mengandung database (.db)' }
+        const tmpRestore = path.join(app.getPath('temp'), 'sim_restore_tmp.db')
+        zip.extractEntryTo(dbEntry, path.dirname(tmpRestore), false, true)
+        backupPath = path.join(path.dirname(tmpRestore), dbEntry.entryName)
+      }
       db.close()
       fs.copyFileSync(backupPath, dbPath)
       const Database = require('better-sqlite3')
