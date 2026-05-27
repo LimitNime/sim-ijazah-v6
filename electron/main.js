@@ -78,9 +78,11 @@ function initDB() {
       no_sk TEXT,
       no_sk_dkn TEXT,
       no_skkb TEXT,
-      no_nilai_ijazah TEXT
+      no_nilai_ijazah TEXT,
+      no_transkrip TEXT
     );
     INSERT OR IGNORE INTO nomor_surat(id) VALUES(1);
+    try { db.prepare('ALTER TABLE nomor_surat ADD COLUMN no_transkrip TEXT').run() } catch(e) {}
 
     CREATE TABLE IF NOT EXISTS angkatan (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -298,6 +300,33 @@ function registerIPC() {
     })
   })
 
+  ipcMain.handle('nilai:rekap_siswa', (_, siswaId) => {
+    try {
+      const sems    = db.prepare('SELECT * FROM semester_config ORDER BY urutan').all()
+      const mapels  = db.prepare('SELECT * FROM mapel ORDER BY COALESCE(urutan,999),nama').all()
+      const nils    = db.prepare('SELECT * FROM nilai WHERE siswa_id=?').all(siswaId)
+      const ujianSem   = sems.find(s => s.is_ujian)
+      const raportSems = sems.filter(s => !s.is_ujian)
+      const seo    = db.prepare('SELECT bobot_raport,bobot_ujian FROM sekolah WHERE id=1').get()
+      const br = seo?.bobot_raport ?? 60, bu = seo?.bobot_ujian ?? 40, tb = br + bu
+      return mapels.map(m => {
+        const rapVals = raportSems.map(s => nils.find(n => n.mapel_id===m.id && n.semester_id===s.id)?.nilai_p).filter(v => v!=null)
+        const rataRap = rapVals.length === raportSems.length ? rapVals.reduce((a,b)=>a+b,0)/rapVals.length : null
+        const ujN = ujianSem ? nils.find(n => n.mapel_id===m.id && n.semester_id===ujianSem.id) : null
+        const ujVal = ujN?.nilai_ujian ?? null
+        const nij = rataRap!=null && ujVal!=null ? (rataRap*br + ujVal*bu)/tb : null
+        return { mapel_id: m.id, nama: m.nama, rataRaport: rataRap, nilaiUS: ujVal, nilaiIjazah: nij }
+      })
+    } catch(e) { return [] }
+  })
+
+  ipcMain.handle('nilai:rekap_angkatan', (_, angkatanId) => {
+    try {
+      const siswaList = db.prepare('SELECT s.* FROM angkatan_siswa a JOIN siswa s ON s.id=a.siswa_id WHERE a.angkatan_id=?').all(angkatanId)
+      return siswaList.map(sw => ({ siswa_id: sw.id, nama: sw.nama }))
+    } catch(e) { return [] }
+  })
+
   // Angkatan
   ipcMain.handle('angkatan:list', () => db.prepare('SELECT a.*, (SELECT COUNT(*) FROM angkatan_siswa x WHERE x.angkatan_id=a.id) jml_siswa FROM angkatan a ORDER BY a.id DESC').all())
   ipcMain.handle('angkatan:add', (_, d) => db.prepare('INSERT INTO angkatan(nama,tahun_lulus,keterangan,is_aktif) VALUES(?,?,?,?)').run(d.nama,d.tahun_lulus,d.keterangan,d.is_aktif).lastInsertRowid)
@@ -331,6 +360,7 @@ function registerIPC() {
       no_skkb:        nomorSurat.no_skkb        || sekolah?.no_skkb || '',
       no_sk_dkn:      nomorSurat.no_sk_dkn      || '',
       no_nilai_ijazah: nomorSurat.no_nilai_ijazah || '',
+      no_transkrip:    nomorSurat.no_transkrip    || '',
     }
     return { sekolah: sekolahWithNomor, siswaList, mapelList, ujianSemId: ujianSem?.id, raportSemIds: raportSems.map(s=>s.id), nilaiData, br, bu, totalB: br+bu }
   }
@@ -760,42 +790,7 @@ function registerIPC() {
       })
       const ws2 = XLSX.utils.aoa_to_sheet(nilaiData)
       ws2['!cols'] = nilaiHeader.map((_,i) => ({ wch: i===0?5:i===1?32:i===2?6:12 }))
-      // Style header baris pertama
-      const headerRange = XLSX.utils.decode_range(ws2['!ref'])
-      for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
-        const addr = XLSX.utils.encode_cell({ r: 0, c: C })
-        if (!ws2[addr]) continue
-        ws2[addr].s = {
-          font:      { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-          fill:      { fgColor: { rgb: '1E3A5F' } },
-          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-          border: {
-            top:    { style: 'thin', color: { rgb: '000000' } },
-            bottom: { style: 'thin', color: { rgb: '000000' } },
-            left:   { style: 'thin', color: { rgb: '000000' } },
-            right:  { style: 'thin', color: { rgb: '000000' } },
-          }
-        }
-      }
-      // Style baris data — alternating color
-      for (let R = 1; R <= headerRange.e.r; R++) {
-        const bg = R % 2 === 0 ? 'EBF3FB' : 'FFFFFF'
-        for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
-          const addr = XLSX.utils.encode_cell({ r: R, c: C })
-          if (!ws2[addr]) ws2[addr] = { v: '', t: 's' }
-          ws2[addr].s = {
-            fill:      { fgColor: { rgb: bg } },
-            alignment: { horizontal: C <= 1 ? 'left' : 'center', vertical: 'center' },
-            border: {
-              top:    { style: 'thin', color: { rgb: 'CCCCCC' } },
-              bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-              left:   { style: 'thin', color: { rgb: 'CCCCCC' } },
-              right:  { style: 'thin', color: { rgb: 'CCCCCC' } },
-            }
-          }
-        }
-      }
-      ws2['!rows'] = [{ hpt: 22 }]  // tinggi header
+      ws2['!rows'] = [{ hpt: 22 }]
 
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, biodataSheet, 'Biodata')
@@ -828,14 +823,14 @@ function registerIPC() {
     return db.prepare('SELECT * FROM nomor_surat WHERE id=1').get() || {}
   })
   ipcMain.handle('nomor_surat:save', (_, field, value) => {
-    const allowed = ['no_sk','no_skkb','no_nilai_ijazah']
+    const allowed = ['no_sk','no_skkb','no_nilai_ijazah','no_transkrip']
     if (!allowed.includes(field)) return { ok: false, message: 'Field tidak valid' }
     db.prepare(`UPDATE nomor_surat SET ${field}=? WHERE id=1`).run(value)
     return { ok: true }
   })
   ipcMain.handle('nomor_surat:save_all', (_, data) => {
-    db.prepare('UPDATE nomor_surat SET no_sk=?,no_skkb=?,no_nilai_ijazah=? WHERE id=1')
-      .run(data.no_sk||null, data.no_skkb||null, data.no_nilai_ijazah||null)
+    db.prepare('UPDATE nomor_surat SET no_sk=?,no_skkb=?,no_nilai_ijazah=?,no_transkrip=? WHERE id=1')
+      .run(data.no_sk||null, data.no_skkb||null, data.no_nilai_ijazah||null, data.no_transkrip||null)
     return { ok: true }
   })
 
