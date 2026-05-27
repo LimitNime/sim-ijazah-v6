@@ -301,7 +301,7 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
                           : 'bg-blue-600 text-white border-blue-600'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     ].join(' ')}>
-                    {sem.label.length > 18 ? sem.label.slice(0, 16) + '…' : sem.label}
+                    {sem.is_ujian ? 'Ujian Sekolah' : sem.label}
                   </button>
                 ))}
               </div>
@@ -320,12 +320,12 @@ export function InputNilaiPage({ showToast, initialSiswaId }: { showToast: (msg:
                           <th className="px-2 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide w-28 text-center">Kel.</th>
                           {isUjian(selSem) ? (
                             <>
-                              <th className="px-3 py-3 text-xs font-bold text-amber-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai US <InfoTooltip text="Nilai Ujian Sekolah — dipakai bersama rata-rata rapor untuk menghitung Nilai Ijazah akhir." /></span></th>
-                              <th className="px-3 py-3 text-xs font-bold text-purple-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai Ijazah <InfoTooltip text="Hasil akhir: (Rata Rapor × bobot%) + (Nilai US × bobot%). Dipakai di dokumen Nilai Ijazah dan Transkrip." /></span></th>
+                              <th className="px-3 py-3 text-xs font-bold text-amber-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai US <InfoTooltip text="Nilai Ujian Sekolah — dipakai bersama rata-rata rapor untuk menghitung Nilai Ijazah." position="bottom" /></span></th>
+                              <th className="px-3 py-3 text-xs font-bold text-purple-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai Ijazah <InfoTooltip text="Hasil akhir: (Rata Rapor × bobot%) + (Nilai US × bobot%). Tampil di dokumen Nilai Ijazah." position="bottom" /></span></th>
                             </>
                           ) : (
                             <>
-                              <th className="px-3 py-3 text-xs font-bold text-blue-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai Pengetahuan <InfoTooltip text="Nilai pengetahuan (P) per semester rapor. Rata-ratanya dihitung sebagai Nilai Rapor Ijazah." /></span></th>
+                              <th className="px-3 py-3 text-xs font-bold text-blue-600 uppercase tracking-wide w-32 text-center"><span className="flex items-center justify-center gap-1">Nilai Pengetahuan <InfoTooltip text="Nilai Pengetahuan (P) per semester — rata-ratanya jadi Nilai Rapor Ijazah." position="bottom" /></span></th>
                               <th className="px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide w-32 text-center">Rata Raport</th>
                             </>
                           )}
